@@ -1078,7 +1078,7 @@ do_cmdline(
 
 		    // Check for the next breakpoint at or after the ":while"
 		    // or ":for".
-		    if (breakpoint != NULL)
+		    if (breakpoint != NULL && lines_ga.ga_len > current_line)
 		    {
 			*breakpoint = dbg_find_breakpoint(
 			       getline_equal(fgetline, cookie, getsourceline),
@@ -7774,6 +7774,7 @@ ex_put(exarg_T *eap)
 	eap->forceit = TRUE;
     }
     curwin->w_cursor.lnum = eap->line2;
+    check_cursor_col();
     do_put(eap->regname, NULL, eap->forceit ? BACKWARD : FORWARD, 1L,
 						       PUT_LINE|PUT_CURSLINE);
 }
