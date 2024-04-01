@@ -1635,10 +1635,10 @@ get_baseclass_amount(int col)
     static pos_T *
 find_start_brace(void)	    // XXX
 {
-    pos_T	cursor_save;
-    pos_T	*trypos;
-    pos_T	*pos;
-    static pos_T	pos_copy;
+    pos_T	    cursor_save;
+    pos_T	    *trypos;
+    pos_T	    *pos;
+    static pos_T    pos_copy;
 
     cursor_save = curwin->w_cursor;
     while ((trypos = findmatchlimit(NULL, '{', FM_BLOCKSTOP, 0)) != NULL)
@@ -1652,7 +1652,7 @@ find_start_brace(void)	    // XXX
 		       && (pos = ind_find_start_CORS(NULL)) == NULL) // XXX
 	    break;
 	if (pos != NULL)
-	    curwin->w_cursor.lnum = pos->lnum;
+	    curwin->w_cursor = *pos;
     }
     curwin->w_cursor = cursor_save;
     return trypos;
