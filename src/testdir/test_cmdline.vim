@@ -655,6 +655,14 @@ func Test_illegal_address2()
   call delete('Xtest.vim')
 endfunc
 
+func Test_mark_from_line_zero()
+  " this was reading past the end of the first (empty) line
+  new
+  norm oxxxx
+  call assert_fails("0;'(", 'E20:')
+  bwipe!
+endfunc
+
 func Test_cmdline_complete_wildoptions()
   help
   call feedkeys(":tag /\<c-a>\<c-b>\"\<cr>", 'tx')
@@ -2203,6 +2211,18 @@ func Test_wildmenumode_with_pum()
   call assert_equal('"sign define0', @:)
   set nowildmenu wildoptions&
   cunmap <F2>
+endfunc
+
+func Test_recursive_register()
+  let @= = ''
+  silent! ?e/
+  let caught = 'no'
+  try
+    normal // 
+  catch /E169:/
+    let caught = 'yes'
+  endtry
+  call assert_equal('yes', caught)
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
