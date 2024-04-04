@@ -1709,4 +1709,16 @@ func Test_wildmenu_dirstack()
   set wildmenu&
 endfunc
 
+func Test_recursive_register()
+  let @= = ''
+  silent! ?e/
+  let caught = 'no'
+  try
+    normal // 
+  catch /E169:/
+    let caught = 'yes'
+  endtry
+  call assert_equal('yes', caught)
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab
