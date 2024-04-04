@@ -136,6 +136,18 @@ func Test_spellreall()
   bwipe!
 endfunc
 
+func Test_spell_dump_word_length()
+  " this was running over MAXWLEN
+  new
+  noremap 0 0a0zW0000000
+  sil! norm 0z=0
+  sil norm 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  sil! norm 0z=0
+
+  bwipe!
+  nunmap 0
+endfunc
+
 " Test spellsuggest({word} [, {max} [, {capital}]])
 func Test_spellsuggest()
   " Verify suggestions are given even when spell checking is not enabled.
@@ -340,6 +352,21 @@ func Test_spellsuggest_expr_errors()
   delfunc MySuggest
   delfunc MySuggest2
   delfunc MySuggest3
+endfunc
+
+func Test_spellsuggest_visual_end_of_line()
+  let enc_save = &encoding
+  set encoding=iso8859
+
+  " This was reading beyond the end of the line.
+  norm R00000000000
+  sil norm 0
+  sil! norm i00000)
+  sil! norm i00000)
+  call feedkeys("\<CR>")
+  norm z=
+
+  let &encoding = enc_save
 endfunc
 
 func Test_spellinfo()
@@ -738,6 +765,14 @@ func Test_spell_screendump()
   " clean up
   call StopVimInTerminal(buf)
   call delete('XtestSpell')
+endfunc
+
+func Test_spell_single_word()
+  new
+  silent! norm 0R00
+  spell! ßÂ
+  silent 0norm 0r$ Dvz=
+  bwipe!
 endfunc
 
 let g:test_data_aff1 = [
