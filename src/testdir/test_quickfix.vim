@@ -1425,6 +1425,7 @@ func XquickfixChangedByAutocmd(cchar)
   call assert_fails('Xrewind', ErrorNr . ':')
 
   augroup! testgroup
+  delfunc R
 endfunc
 
 func Test_quickfix_was_changed_by_autocmd()
@@ -4968,5 +4969,21 @@ func Test_lhelpgrep_from_help_window()
   call delete('Xtestdir', 'rf')
   new | only!
 endfunc
+
+" Weird sequence of commands that caused entering a wiped-out buffer
+func Test_lopen_bwipe()
+  func R()
+    silent! tab lopen
+    e x
+    silent! lfile
+  endfunc
+
+  cal R()
+  cal R()
+  cal R()
+  bw!
+  delfunc R
+endfunc
+
 
 " vim: shiftwidth=2 sts=2 expandtab
