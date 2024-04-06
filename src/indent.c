@@ -18,18 +18,19 @@
 /*
  * Set the integer values corresponding to the string setting of 'vartabstop'.
  * "array" will be set, caller must free it if needed.
+ * Return FAIL for an error.
  */
     int
 tabstop_set(char_u *var, int **array)
 {
-    int valcount = 1;
-    int t;
-    char_u *cp;
+    int	    valcount = 1;
+    int	    t;
+    char_u  *cp;
 
     if (var[0] == NUL || (var[0] == '0' && var[1] == NUL))
     {
 	*array = NULL;
-	return TRUE;
+	return OK;
     }
 
     for (cp = var; *cp != NUL; ++cp)
@@ -43,8 +44,8 @@ tabstop_set(char_u *var, int **array)
 		if (cp != end)
 		    emsg(_(e_positive));
 		else
-		    emsg(_(e_invarg));
-		return FALSE;
+		    semsg(_(e_invarg2), cp);
+		return FAIL;
 	    }
 	}
 
@@ -55,26 +56,36 @@ tabstop_set(char_u *var, int **array)
 	    ++valcount;
 	    continue;
 	}
-	emsg(_(e_invarg));
-	return FALSE;
+	semsg(_(e_invarg2), var);
+	return FAIL;
     }
 
     *array = ALLOC_MULT(int, valcount + 1);
     if (*array == NULL)
-	return FALSE;
+	return FAIL;
     (*array)[0] = valcount;
 
     t = 1;
     for (cp = var; *cp != NUL;)
     {
-	(*array)[t++] = atoi((char *)cp);
-	while (*cp  != NUL && *cp != ',')
+	int n = atoi((char *)cp);
+
+	// Catch negative values, overflow and ridiculous big values.
+	if (n < 0 || n > 9999)
+	{
+	    semsg(_(e_invarg2), cp);
+	    vim_free(*array);
+	    *array = NULL;
+	    return FAIL;
+	}
+	(*array)[t++] = n;
+	while (*cp != NUL && *cp != ',')
 	    ++cp;
 	if (*cp != NUL)
 	    ++cp;
     }
 
-    return TRUE;
+    return OK;
 }
 
 /*
@@ -1272,6 +1283,8 @@ change_indent(
 		new_cursor_col += (*mb_ptr2len)(ptr + new_cursor_col);
 	    else
 		++new_cursor_col;
+	    if (ptr[new_cursor_col] == NUL)
+		break;
 	    vcol += lbr_chartabsize(ptr, ptr + new_cursor_col, (colnr_T)vcol);
 	}
 	vcol = last_vcol;
@@ -1560,7 +1573,7 @@ ex_retab(exarg_T *eap)
 
 #ifdef FEAT_VARTABS
     new_ts_str = eap->arg;
-    if (!tabstop_set(eap->arg, &new_vts_array))
+    if (tabstop_set(eap->arg, &new_vts_array) == FAIL)
 	return;
     while (vim_isdigit(*(eap->arg)) || *(eap->arg) == ',')
 	++(eap->arg);
@@ -1576,10 +1589,16 @@ ex_retab(exarg_T *eap)
     else
 	new_ts_str = vim_strnsave(new_ts_str, eap->arg - new_ts_str);
 #else
-    new_ts = getdigits(&(eap->arg));
-    if (new_ts < 0)
+    ptr = eap->arg;
+    new_ts = getdigits(&ptr);
+    if (new_ts < 0 && *eap->arg == '-')
     {
 	emsg(_(e_positive));
+	return;
+    }
+    if (new_ts < 0 || new_ts > 9999)
+    {
+	semsg(_(e_invarg2), eap->arg);
 	return;
     }
     if (new_ts == 0)
@@ -1676,6 +1695,11 @@ ex_retab(exarg_T *eap)
 	    if (ptr[col] == NUL)
 		break;
 	    vcol += chartabsize(ptr + col, (colnr_T)vcol);
+	    if (vcol >= MAXCOL)
+	    {
+		emsg(_(e_resulting_text_too_long));
+		break;
+	    }
 	    if (has_mbyte)
 		col += (*mb_ptr2len)(ptr + col);
 	    else
@@ -1945,8 +1969,11 @@ get_lisp_indent(void)
 		    amount += 2;
 		else
 		{
-		    that++;
-		    amount++;
+		    if (*that != NUL)
+		    {
+			that++;
+			amount++;
+		    }
 		    firsttry = amount;
 
 		    while (VIM_ISWHITE(*that))
