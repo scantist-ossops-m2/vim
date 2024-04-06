@@ -2112,6 +2112,25 @@ func Test_autocmd_nested()
   call assert_fails('au WinNew * nested nested echo bad', 'E983:')
 endfunc
 
+func Test_autocmd_nested_cursor_invalid()
+  set laststatus=0
+  copen
+  cclose
+  call setline(1, ['foo', 'bar', 'baz'])
+  3
+  augroup nested_inv
+    autocmd User foo ++nested copen
+    autocmd BufAdd * let &laststatus = 2 - &laststatus
+  augroup END
+  doautocmd User foo
+
+  augroup nested_inv
+    au!
+  augroup END
+  set laststatus&
+  bwipe!
+endfunc
+
 func Test_autocmd_once()
   " Without ++once WinNew triggers twice
   let g:did_split = 0
@@ -2559,6 +2578,16 @@ func Test_FileType_spell()
 
   au! crash
   setglobal spellfile=
+endfunc
+
+" this was wiping out the current buffer and using freed memory
+func Test_SpellFileMissing_bwipe()
+  next 0
+  au SpellFileMissing 0 bwipe
+  call assert_fails('set spell spelllang=0', 'E937:')
+
+  au! SpellFileMissing
+  bwipe
 endfunc
 
 " Test closing a window or editing another buffer from a FileChangedRO handler
