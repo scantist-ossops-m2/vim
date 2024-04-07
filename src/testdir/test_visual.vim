@@ -659,6 +659,16 @@ func Test_linewise_select_mode()
   exe "normal GkkgH\<Del>"
   call assert_equal(['', 'b', 'c'], getline(1, '$'))
 
+" this was causing an ml_get error
+func Test_visual_exchange_windows()
+  enew!
+  new
+  call setline(1, ['foo', 'bar'])
+  exe "normal G\<C-V>gg\<C-W>\<C-X>OO\<Esc>"
+  bwipe!
+  bwipe!
+endfunc
+
 
   " linewise select mode: delete middle two lines
   call deletebufline('', 1, '$')
