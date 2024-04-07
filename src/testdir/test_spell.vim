@@ -126,6 +126,21 @@ func Test_spellreall()
   bwipe!
 endfunc
 
+func Test_spellsuggest_visual_end_of_line()
+  let enc_save = &encoding
+  set encoding=iso8859
+
+  " This was reading beyond the end of the line.
+  norm R00000000000
+  sil norm 0
+  sil! norm i00000)
+  sil! norm i00000)
+  call feedkeys("\<CR>")
+  norm z=
+
+  let &encoding = enc_save
+endfunc
+
 func Test_spellinfo()
   new
   let runtime = substitute($VIMRUNTIME, '\\', '/', 'g')
