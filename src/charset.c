@@ -1662,6 +1662,12 @@ vim_isupper(int c)
 }
 
     int
+vim_isalpha(int c)
+{
+    return vim_islower(c) || vim_isupper(c);
+}
+
+    int
 vim_toupper(int c)
 {
     if (c <= '@')
