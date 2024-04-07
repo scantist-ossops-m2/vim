@@ -491,6 +491,10 @@ spell_suggest(int count)
 	    curwin->w_cursor.col = VIsual.col;
 	++badlen;
 	end_visual_mode();
+	// make sure we don't include the NUL at the end of the line
+	line = ml_get_curline();
+	if (badlen > STRLEN(line) - curwin->w_cursor.col)
+	    badlen = STRLEN(line) - curwin->w_cursor.col;
     }
     // Find the start of the badly spelled word.
     else if (spell_move_to(curwin, FORWARD, TRUE, TRUE, NULL) == 0
@@ -1599,7 +1603,7 @@ suggest_trie_walk(
 		    // char, e.g., "thes," -> "these".
 		    p = fword + sp->ts_fidx;
 		    MB_PTR_BACK(fword, p);
-		    if (!spell_iswordp(p, curwin))
+		    if (!spell_iswordp(p, curwin) && *preword != NUL)
 		    {
 			p = preword + STRLEN(preword);
 			MB_PTR_BACK(preword, p);
