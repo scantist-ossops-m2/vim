@@ -5251,4 +5251,16 @@ func Test_cindent_56()
   enew! | close
 endfunc
 
+func Test_find_brace_backwards()
+  " this was looking beyond the end of the line
+  new
+  norm R/*
+  norm o0{
+  norm o//
+  norm V{=
+  call assert_equal(['/*', '   0{', '//'], getline(1, 3))
+  bwipe!
+endfunc
+
+
 " vim: shiftwidth=2 sts=2 expandtab
