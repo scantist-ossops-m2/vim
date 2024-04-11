@@ -5977,11 +5977,14 @@ generate_loadvar(
 	    generate_LOADV(cctx, name + 2, TRUE);
 	    break;
 	case dest_local:
-	    if (lvar->lv_from_outer > 0)
-		generate_LOADOUTER(cctx, lvar->lv_idx, lvar->lv_from_outer,
+	    if (cctx->ctx_skip != SKIP_YES)
+	    {
+		if (lvar->lv_from_outer > 0)
+		    generate_LOADOUTER(cctx, lvar->lv_idx, lvar->lv_from_outer,
 									 type);
-	    else
-		generate_LOAD(cctx, ISN_LOAD, lvar->lv_idx, NULL, type);
+		else
+		    generate_LOAD(cctx, ISN_LOAD, lvar->lv_idx, NULL, type);
+	    }
 	    break;
 	case dest_expr:
 	    // list or dict value should already be on the stack.
@@ -6810,6 +6813,9 @@ compile_assign_unlet(
 		return FAIL;
 	}
     }
+
+    if (cctx->ctx_skip == SKIP_YES)
+	return OK;
 
     // Load the dict or list.  On the stack we then have:
     // - value (for assignment, not for :unlet)
@@ -9839,7 +9845,8 @@ compile_def_function(
 	if (!(local_cmdmod.cmod_flags & CMOD_LEGACY)
 		&& (*cmd != '$' || starts_with_colon)
 		&& (starts_with_colon || !(*cmd == '\''
-		       || (cmd[0] == cmd[1] && (*cmd == '+' || *cmd == '-')))))
+		       || (cmd[0] != NUL && cmd[0] == cmd[1]
+					    && (*cmd == '+' || *cmd == '-')))))
 	{
 	    ea.cmd = skip_range(ea.cmd, TRUE, NULL);
 	    if (ea.cmd > cmd)
