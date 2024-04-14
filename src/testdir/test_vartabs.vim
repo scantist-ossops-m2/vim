@@ -373,6 +373,18 @@ func Test_vartabs_failures()
   call assert_fails('set vsts=,8')
 endfunc
 
+func Test_vartabstop_latin1()
+  let save_encoding = &encoding
+  new
+  set encoding=iso8859
+  silent norm :se 
+  set vartabstop=400
+  norm i00	
+  bwipe!
+  let &encoding = save_encoding
+endfunc
+
+
 func Test_vartabs_reset()
   set vts=8
   set all&
