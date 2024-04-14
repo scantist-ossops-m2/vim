@@ -1977,4 +1977,18 @@ func Test_pattern_is_uppercase_smartcase()
   bw!
 endfunc
 
+func Test_search_with_invalid_range()
+  new
+  let lines =<< trim END
+    /\%.v
+    5/
+    c
+  END
+  call writefile(lines, 'Xrangesearch')
+  source Xrangesearch
+
+  bwipe!
+  call delete('Xrangesearch')
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab
