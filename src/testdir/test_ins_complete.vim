@@ -2132,4 +2132,12 @@ func Test_thesaurusfunc_callback()
   %bw!
 endfunc
 
+func Test_complete_overrun()
+  " this was going past the end of the copied text
+  new
+  sil norm siÂ”0s0
+  bwipe!
+endfunc
+
+
 " vim: shiftwidth=2 sts=2 expandtab
