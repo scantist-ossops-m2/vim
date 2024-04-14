@@ -847,6 +847,14 @@ func Test_spell_single_word()
   bwipe!
 endfunc
 
+func Test_spell_single_word()
+  new
+  silent! norm 0R00
+  spell! ßÂ
+  silent 0norm 0r$ Dvz=
+  bwipe!
+endfunc
+
 let g:test_data_aff1 = [
       \"SET ISO8859-1",
       \"TRY esianrtolcdugmphbyfvkwjkqxz-\xEB\xE9\xE8\xEA\xEF\xEE\xE4\xE0\xE2\xF6\xFC\xFB'ESIANRTOLCDUGMPHBYFVKWJKQXZ",
