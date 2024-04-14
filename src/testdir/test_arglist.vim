@@ -497,6 +497,13 @@ func Test_large_arg()
   args
 endfunc
 
+func Test_clear_arglist_in_all()
+  n 0 00 000 0000 00000 000000
+  au! * 0 n 0
+  all
+  au! *
+endfunc
+
 func Test_argdo()
   next! Xa.c Xb.c Xc.c
   new
