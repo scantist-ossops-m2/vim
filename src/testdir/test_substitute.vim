@@ -1063,6 +1063,25 @@ func Test_sub_open_cmdline_win()
   call delete('Xresult')
 endfunc
 
+" This was editing another file from the expression.
+func Test_sub_expr_goto_other_file()
+  call writefile([''], 'Xfileone', 'D')
+  enew!
+  call setline(1, ['a', 'b', 'c', 'd',
+	\ 'Xfileone zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'])
+
+  func g:SplitGotoFile()
+    exe "sil! norm 0\<C-W>gf"
+    return ''
+  endfunc
+
+  $
+  s/\%')/\=g:SplitGotoFile()
+
+  delfunc g:SplitGotoFile
+  bwipe!
+endfunc
+
 " Test for the 2-letter and 3-letter :substitute commands
 func Test_substitute_short_cmd()
   new
