@@ -27,6 +27,14 @@ func Test_assert_true()
   call assert_equal(1, 0->assert_true())
   call assert_match("Expected 'True' but got 0", v:errors[0])
   call remove(v:errors, 0)
+
+  " many composing characters are handled properly
+  call setline(1, ' ')
+  norm 100gr›Ä
+  call assert_equal(1, getline(1))
+  call assert_match("Expected 1 but got '.* occurs 100 times]'", v:errors[0])
+  call remove(v:errors, 0)
+  bwipe!
 endfunc
 
 func Test_assert_equal()
