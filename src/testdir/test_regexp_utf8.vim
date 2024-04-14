@@ -215,3 +215,11 @@ func Test_optmatch_toolong()
   set re=0
 endfunc
 
+func Test_match_invalid_byte()
+  call writefile(0z630a.765d30aa0a.2e0a.790a.4030, 'Xinvalid')
+  new
+  source Xinvalid
+  bwipe!
+  call delete('Xinvalid')
+endfunc
+
