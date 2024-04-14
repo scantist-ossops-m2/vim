@@ -71,7 +71,7 @@ tabstop_set(char_u *var, int **array)
 	int n = atoi((char *)cp);
 
 	// Catch negative values, overflow and ridiculous big values.
-	if (n < 0 || n > 9999)
+	if (n < 0 || n > TABSTOP_MAX)
 	{
 	    semsg(_(e_invarg2), cp);
 	    vim_free(*array);
@@ -1625,7 +1625,7 @@ ex_retab(exarg_T *eap)
 	emsg(_(e_positive));
 	return;
     }
-    if (new_ts < 0 || new_ts > 9999)
+    if (new_ts < 0 || new_ts > TABSTOP_MAX)
     {
 	semsg(_(e_invarg2), eap->arg);
 	return;
