@@ -870,9 +870,6 @@ op_format(
     {
 	curwin->w_cursor = saved_cursor;
 	saved_cursor.lnum = 0;
-
-	// formatting may have made the cursor position invalid
-	check_cursor();
     }
 
     if (oap->is_VIsual)
