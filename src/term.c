@@ -5381,6 +5381,7 @@ check_termcode(
 	if (*tp == ESC && !p_ek && (State & INSERT))
 	    continue;
 
+	tp[len] = NUL;
 	key_name[0] = NUL;	// no key name found yet
 	key_name[1] = NUL;	// no key name found yet
 	modifiers = 0;		// no modifiers yet
