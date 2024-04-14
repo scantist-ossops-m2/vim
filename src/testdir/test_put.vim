@@ -102,6 +102,17 @@ func Test_put_p_errmsg_nodup()
   bwipeout!
 endfunc
 
+func Test_put_visual_block_mode()
+  enew
+  exe "norm 0R\<CR>\<C-C>V"
+  sil exe "norm \<C-V>c	\<MiddleDrag>"
+  set ve=all
+  sil norm vz=p
+
+  bwipe!
+  set ve=
+endfunc
+
 func Test_put_p_indent_visual()
   new
   call setline(1, ['select this text', 'select that text'])
