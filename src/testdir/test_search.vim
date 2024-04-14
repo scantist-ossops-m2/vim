@@ -1364,5 +1364,19 @@ func Test_searchdecl()
   call assert_equal(0, searchdecl('global', 1))
   call assert_equal(1, getcurpos()[1])
 
+func Test_search_with_invalid_range()
+  new
+  let lines =<< trim END
+    /\%.v
+    5/
+    c
+  END
+  call writefile(lines, 'Xrangesearch')
+  source Xrangesearch
+
+  bwipe!
+  call delete('Xrangesearch')
+endfunc
+
   bwipe!
 endfunc
