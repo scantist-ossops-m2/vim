@@ -2541,8 +2541,16 @@ stop_insert(
 
 	    // <C-S-Right> may have started Visual mode, adjust the position for
 	    // deleted characters.
-	    if (VIsual_active)
-		check_visual_pos();
+	    if (VIsual_active && VIsual.lnum == curwin->w_cursor.lnum)
+	    {
+		int len = (int)STRLEN(ml_get_curline());
+
+		if (VIsual.col > len)
+		{
+		    VIsual.col = len;
+		    VIsual.coladd = 0;
+		}
+	    }
 	}
     }
     did_ai = FALSE;
