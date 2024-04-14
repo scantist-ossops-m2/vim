@@ -1675,4 +1675,14 @@ func Test_thesaurusfunc_callback()
   %bw!
 endfunc
 
+func Test_ins_complete_add()
+  " this was reading past the end of allocated memory
+  new
+  norm o
+  norm 7o
+  sil! norm o
+
+  bwipe!
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab
