@@ -131,6 +131,14 @@ func Test_range_with_newline()
   bwipe!
 endfunc
 
+func Test_using_visual_position()
+  " this was using freed memory
+  new
+  exe "norm 0o\<Esc>\<C-V>k\<C-X>o0"
+  /\%V
+  bwipe!
+endfunc
+
 func Test_pattern_compile_speed()
   if !exists('+spellcapcheck') || !has('reltime')
     return
