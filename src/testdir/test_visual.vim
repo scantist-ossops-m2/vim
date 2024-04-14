@@ -1298,5 +1298,17 @@ func Test_visual_undo_deletes_last_line()
   bwipe!
 endfunc
 
+func Test_visual_area_adjusted_when_hiding()
+  " The Visual area ended after the end of the line after :hide
+  call setline(1, 'xxx')
+  vsplit Xfile
+  call setline(1, 'xxxxxxxx')
+  norm! $o
+  hid
+  norm! zW
+  bwipe!
+  bwipe!
+endfunc
+
 
 " vim: shiftwidth=2 sts=2 expandtab
