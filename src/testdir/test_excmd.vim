@@ -655,4 +655,12 @@ func Test_not_break_expression_register()
   call assert_equal('1+1', getreg('=', 1))
 endfunc
 
+" This was leaving the cursor in line zero
+func Test_using_zero_in_range()
+  new
+  norm o00
+  silent!  0;s/\%')
+  bwipe!
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab
