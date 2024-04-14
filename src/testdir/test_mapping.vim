@@ -463,6 +463,16 @@ func Test_list_mappings()
   call assert_equal(['No mapping found'], execute('imap')->trim()->split("\n"))
 endfunc
 
+func Test_using_past_typeahead()
+  nnoremap :00 0
+  exe "norm :set \x80\xfb0=0\<CR>"
+  exe "sil norm :0\x0f\<C-U>\<CR>"
+
+  exe "norm :set \x80\xfb0=\<CR>"
+  nunmap :00
+endfunc
+
+
 func Test_expr_map_restore_cursor()
   CheckScreendump
 
