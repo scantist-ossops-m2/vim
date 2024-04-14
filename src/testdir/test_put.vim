@@ -219,5 +219,14 @@ func Test_put_empty_register()
   bwipe!
 endfunc
 
+" this was putting a mark before the start of a line
+func Test_put_empty_register()
+  new
+  norm yy
+  norm [Pi00ggv)s0
+  sil! norm [P
+  bwipe!
+endfunc
+
 
 " vim: shiftwidth=2 sts=2 expandtab
