@@ -2441,4 +2441,16 @@ func Test_cmdline_complete_dlist()
   call assert_equal("\"dlist 10 /pat/ | chistory", @:)
 endfunc
 
+func Test_recursive_register()
+  let @= = ''
+  silent! ?e/
+  let caught = 'no'
+  try
+    normal // 
+  catch /E169:/
+    let caught = 'yes'
+  endtry
+  call assert_equal('yes', caught)
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab
