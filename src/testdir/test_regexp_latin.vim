@@ -139,6 +139,14 @@ func Test_using_visual_position()
   bwipe!
 endfunc
 
+func Test_using_invalid_visual_position()
+  " this was going beyond the end of the line
+  new
+  exe "norm 0o000\<Esc>0\<C-V>$s0"
+  /\%V
+  bwipe!
+endfunc
+
 func Test_pattern_compile_speed()
   if !exists('+spellcapcheck') || !has('reltime')
     return
