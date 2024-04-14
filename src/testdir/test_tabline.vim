@@ -134,6 +134,20 @@ func Test_tabline_empty_group()
   set tabline=
 endfunc
 
+func Test_mouse_click_in_tab()
+  " This used to crash because TabPageIdxs[] was not initialized
+  let lines =<< trim END
+      tabnew
+      set mouse=a
+      exe "norm \<LeftMouse>"
+  END
+  call writefile(lines, 'Xclickscript')
+  call RunVim([], [], "-e -s -S Xclickscript -c qa")
+
+  call delete('Xclickscript')
+endfunc
+
+
 
 
 " vim: shiftwidth=2 sts=2 expandtab
