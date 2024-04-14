@@ -3871,15 +3871,12 @@ eval_lambda(
 	++*arg;
 	ret = eval1(arg, rettv, evalarg);
 	*arg = skipwhite_and_linebreak(*arg, evalarg);
-	if (**arg == ')')
-	{
-	    ++*arg;
-	}
-	else
+	if (**arg != ')')
 	{
 	    emsg(_(e_missing_closing_paren));
 	    ret = FAIL;
 	}
+	++*arg;
     }
     if (ret != OK)
 	return FAIL;
