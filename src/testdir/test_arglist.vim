@@ -590,6 +590,13 @@ func Test_quit_with_arglist()
   call delete('.c.swp')
 endfunc
 
+func Test_clear_arglist_in_all()
+  n 0 00 000 0000 00000 000000
+  au! * 0 n 0
+  all
+  au! *
+endfunc
+
 " Test for ":all" not working when in the cmdline window
 func Test_all_not_allowed_from_cmdwin()
   CheckFeature cmdwin
