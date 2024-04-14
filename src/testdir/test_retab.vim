@@ -69,7 +69,26 @@ func Test_retab()
   call assert_equal("    a       b        c    ",         Retab('!', 3))
   call assert_equal("    a       b        c    ",         Retab('',  5))
   call assert_equal("    a       b        c    ",         Retab('!', 5))
+
+  set tabstop& expandtab&
 endfunc
+
+func Test_retab_endless()
+  new
+  call setline(1, "\t0\t")
+  let caught = 'no'
+  try
+    while 1
+      set ts=4000
+      retab 4
+    endwhile
+  catch /E1240/
+    let caught = 'yes'
+  endtry
+  bwipe!
+  set tabstop&
+endfunc
+
 
 func Test_retab_error()
   call assert_fails('retab -1',  'E487:')
