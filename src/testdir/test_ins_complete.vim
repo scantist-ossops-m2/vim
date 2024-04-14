@@ -2118,6 +2118,16 @@ func Test_infercase_very_long_line()
   set noic noinfercase
 endfunc
 
+func Test_ins_complete_add()
+  " this was reading past the end of allocated memory
+  new
+  norm o
+  norm 7o
+  sil! norm o
+
+  bwipe!
+endfunc
+
 
 func Test_complete_overrun()
   " this was going past the end of the copied text
