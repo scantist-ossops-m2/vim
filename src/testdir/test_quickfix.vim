@@ -979,7 +979,6 @@ func Test_locationlist_curwin_was_closed()
   call assert_fails('lrewind', 'E924:')
 
   augroup! testgroup
-  delfunc R
 endfunc
 
 func Test_locationlist_cross_tab_jump()
@@ -5859,22 +5858,6 @@ func Test_two_qf_windows()
   %bw!
 endfunc
 
-" Weird sequence of commands that caused entering a wiped-out buffer
-func Test_lopen_bwipe()
-  func R()
-    silent! tab lopen
-    e x
-    silent! lfile
-  endfunc
-
-  cal R()
-  cal R()
-  cal R()
-  bw!
-  delfunc R
-endfunc
-
-" Another sequence of commands that caused all buffers to be wiped out
 func Test_lopen_bwipe_all()
   let lines =<< trim END
     func R()
