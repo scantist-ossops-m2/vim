@@ -1500,6 +1500,18 @@ func Test_edit_startinsert()
   bwipe!
 endfunc
 
+" Test for getting the character of the line below after "p"
+func Test_edit_put_CTRL_E()
+  set encoding=latin1
+  new
+  let @" = ''
+  sil! norm orggRx
+  sil! norm pr
+  call assert_equal(['r', 'r'], getline(1, 2))
+  bwipe!
+  set encoding=utf-8
+endfunc
+
 func Test_edit_noesckeys()
   CheckNotGui
   new
