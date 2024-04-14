@@ -131,4 +131,15 @@ func Test_put_above_first_line()
   bwipe!
 endfunc
 
+func Test_put_visual_block_mode()
+  enew
+  exe "norm 0R\<CR>\<C-C>V"
+  sil exe "norm \<C-V>c	\<MiddleDrag>"
+  set ve=all
+  sil norm vz=p
+
+  bwipe!
+  set ve=
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab
