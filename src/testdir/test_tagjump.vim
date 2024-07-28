@@ -39,6 +39,12 @@ func Test_static_tagjump()
   call delete('Xtags')
   call delete('Xfile1')
   bwipe!
+
+  new somefile
+  call setline(1, ['first line', '', '#define something 0'])
+  sil norm 0o0
+  sil! norm ]d
+  bwipe!
 endfunc
 
 " Tests for [ CTRL-I and CTRL-W CTRL-I commands
