@@ -1,6 +1,7 @@
 " Tests for various eval things.
 
 source view_util.vim
+source shared.vim
 
 function s:foo() abort
   try
@@ -73,6 +74,18 @@ func Test_for_invalid()
     /1/5/2/s/\n
   endif
   redraw
+endfunc
+
+func Test_for_invalid_line_count()
+  let lines =<< trim END
+      111111111111111111111111 for line in ['one']
+      endfor
+  END
+  call writefile(lines, 'XinvalidFor')
+  " only test that this doesn't crash
+  call RunVim([], [], '-u NONE -e -s -S XinvalidFor -c qa')
+
+  call delete('XinvalidFor')
 endfunc
 
 func Test_readfile_binary()
