@@ -1,6 +1,7 @@
 " Tests for various eval things.
 
 source view_util.vim
+source shared.vim
 
 function s:foo() abort
   try
@@ -68,6 +69,30 @@ func Test_for_invalid()
   call assert_fails("for x in 99", 'E714:')
   call assert_fails("for x in 'asdf'", 'E714:')
   call assert_fails("for x in {'a': 9}", 'E714:')
+endfunc
+
+func Test_for_over_null_string()
+  let save_enc = &enc
+  set enc=iso8859
+  let cnt = 0
+  for c in test_null_string()
+    let cnt += 1
+  endfor
+  call assert_equal(0, cnt)
+
+  let &enc = save_enc
+endfunc
+
+func Test_for_invalid_line_count()
+  let lines =<< trim END
+      111111111111111111111111 for line in ['one']
+      endfor
+  END
+  call writefile(lines, 'XinvalidFor')
+  " only test that this doesn't crash
+  call RunVim([], [], '-u NONE -e -s -S XinvalidFor -c qa')
+
+  call delete('XinvalidFor')
 endfunc
 
 func Test_readfile_binary()
