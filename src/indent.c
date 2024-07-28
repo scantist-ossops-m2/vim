@@ -1338,6 +1338,8 @@ change_indent(
 		new_cursor_col += (*mb_ptr2len)(ptr + new_cursor_col);
 	    else
 		++new_cursor_col;
+	    if (ptr[new_cursor_col] == NUL)
+		break;
 	    vcol += lbr_chartabsize(ptr, ptr + new_cursor_col, (colnr_T)vcol);
 	}
 	vcol = last_vcol;
@@ -1750,6 +1752,11 @@ ex_retab(exarg_T *eap)
 	    if (ptr[col] == NUL)
 		break;
 	    vcol += chartabsize(ptr + col, (colnr_T)vcol);
+	    if (vcol >= MAXCOL)
+	    {
+		emsg(_(e_resulting_text_too_long));
+		break;
+	    }
 	    if (has_mbyte)
 		col += (*mb_ptr2len)(ptr + col);
 	    else
@@ -2029,8 +2036,11 @@ get_lisp_indent(void)
 		    amount += 2;
 		else
 		{
-		    that++;
-		    amount++;
+		    if (*that != NUL)
+		    {
+			that++;
+			amount++;
+		    }
 		    firsttry = amount;
 
 		    while (VIM_ISWHITE(*that))
