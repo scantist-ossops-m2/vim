@@ -2558,6 +2558,20 @@ nv_diffgetput(int put, long count)
 }
 
 /*
+ * Return TRUE if "diff" appears in the list of diff blocks of the current tab.
+ */
+    static int
+valid_diff(diff_T *diff)
+{
+    diff_T	*dp;
+
+    for (dp = curtab->tp_first_diff; dp != NULL; dp = dp->df_next)
+	if (dp == diff)
+	    return TRUE;
+    return FALSE;
+}
+
+/*
  * ":diffget"
  * ":diffput"
  */
@@ -2814,9 +2828,9 @@ ex_diffgetput(exarg_T *eap)
 		}
 	    }
 
-	    // Adjust marks.  This will change the following entries!
 	    if (added != 0)
 	    {
+		// Adjust marks.  This will change the following entries!
 		mark_adjust(lnum, lnum + count - 1, (long)MAXLNUM, (long)added);
 		if (curwin->w_cursor.lnum >= lnum)
 		{
@@ -2838,7 +2852,13 @@ ex_diffgetput(exarg_T *eap)
 #endif
 		vim_free(dfree);
 	    }
-	    else
+
+	    // mark_adjust() may have made "dp" invalid.  We don't know where
+	    // to continue then, bail out.
+	    if (added != 0 && !valid_diff(dp))
+		break;
+
+	    if (dfree == NULL)
 		// mark_adjust() may have changed the count in a wrong way
 		dp->df_count[idx_to] = new_count;
 
