@@ -935,6 +935,21 @@ func Test_edit_completefunc_delete()
   bwipe!
 endfunc
 
+" Weird long file name was going over the end of NameBuff
+func Test_edit_overlong_file_name()
+  CheckUnix
+
+  file 0000000000000000000000000000
+  file %%%%%%%%%%%%%%%%%%%%%%%%%%
+  file %%%%%%
+  set readonly
+  set ls=2 
+
+  redraw!
+  set noreadonly ls&
+  bwipe!
+endfunc
+
 
 func Test_edit_CTRL_Z()
   " Ctrl-Z when insertmode is not set inserts it literally
