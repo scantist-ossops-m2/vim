@@ -70,6 +70,16 @@ func Test_z_equal_on_invalid_utf8_word()
   bwipe!
 endfunc
 
+func Test_z_equal_on_single_character()
+  " this was decrementing the index below zero
+  new
+  norm a0\Ê
+  norm zW
+  norm z=
+
+  bwipe!
+endfunc
+
 " Test spellbadword() with argument
 func Test_spellbadword()
   set spell
@@ -126,6 +136,21 @@ func Test_spellreall()
   call assert_fails('spellrepall', 'E753:')
   set spell&
   bwipe!
+endfunc
+
+func Test_spellsuggest_visual_end_of_line()
+  let enc_save = &encoding
+  set encoding=iso8859
+
+  " This was reading beyond the end of the line.
+  norm R00000000000
+  sil norm 0
+  sil! norm i00000)
+  sil! norm i00000)
+  call feedkeys("\<CR>")
+  norm z=
+
+  let &encoding = enc_save
 endfunc
 
 func Test_spellinfo()
@@ -483,6 +508,14 @@ func Test_spell_screendump()
   " clean up
   call StopVimInTerminal(buf)
   call delete('XtestSpell')
+endfunc
+
+func Test_spell_single_word()
+  new
+  silent! norm 0R00
+  spell! ßÂ
+  silent 0norm 0r$ Dvz=
+  bwipe!
 endfunc
 
 let g:test_data_aff1 = [
