@@ -3,6 +3,17 @@ if !has('visual')
   finish
 endif
 
+" this was leaving the end of the Visual area beyond the end of a line
+func Test_visual_ex_copy_line()
+  new
+  call setline(1, ["aaa", "bbbbbbbbbxbb"])
+  /x
+  exe "normal ggvjfxO"
+  t0
+  normal gNU
+  bwipe!
+endfunc
+
 
 func Test_block_shift_multibyte()
   " Uses double-wide character.
