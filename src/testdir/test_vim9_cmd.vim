@@ -1681,6 +1681,15 @@ def Test_lockvar()
       UnLockIt()
   END
   v9.CheckScriptFailure(lines, 'E46', 1)
+
+  lines =<< trim END
+      def _()
+        s:0([], s:0)
+        lockv
+      enddef
+      defcomp
+  END
+  v9.CheckScriptFailure(lines, 'E179', 2)
 enddef
 
 def Test_substitute_expr()
