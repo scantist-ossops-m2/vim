@@ -4481,6 +4481,8 @@ build_stl_str_hl(
 #endif
 	if (vim_strchr(STL_ALL, *s) == NULL)
 	{
+	    if (*s == NUL)  // can happen with "%0"
+		break;
 	    s++;
 	    continue;
 	}
