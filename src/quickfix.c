@@ -4506,6 +4506,11 @@ call_qftf_func(qf_list_T *qfl, int qf_winid, long start_idx, long end_idx)
 {
     char_u	*qftf = p_qftf;
     list_T	*qftf_list = NULL;
+    static int	recursive = FALSE;
+
+    if (recursive)
+	return NULL;  // this doesn't work properly recursively
+    recursive = TRUE;
 
     // If 'quickfixtextfunc' is set, then use the user-supplied function to get
     // the text to display. Use the local value of 'quickfixtextfunc' if it is
@@ -4519,7 +4524,10 @@ call_qftf_func(qf_list_T *qfl, int qf_winid, long start_idx, long end_idx)
 
 	// create the dict argument
 	if ((d = dict_alloc_lock(VAR_FIXED)) == NULL)
+	{
+	    recursive = FALSE;
 	    return NULL;
+	}
 	dict_add_number(d, "quickfix", (long)IS_QF_LIST(qfl));
 	dict_add_number(d, "winid", (long)qf_winid);
 	dict_add_number(d, "id", (long)qfl->qf_id);
@@ -4533,6 +4541,7 @@ call_qftf_func(qf_list_T *qfl, int qf_winid, long start_idx, long end_idx)
 	--d->dv_refcount;
     }
 
+    recursive = FALSE;
     return qftf_list;
 }
 
@@ -4566,7 +4575,7 @@ qf_fill_buffer(qf_list_T *qfl, buf_T *buf, qfline_T *old_last, int qf_winid)
     }
 
     // Check if there is anything to display
-    if (qfl != NULL)
+    if (qfl != NULL && qfl->qf_start != NULL)
     {
 	char_u		dirname[MAXPATHL];
 
