@@ -365,6 +365,23 @@ func Test_copenHeight_tabline()
   set tabline& showtabline&
 endfunc
 
+" Test for replacing the location list from an autocmd. This used to cause a
+" read from freed memory.
+func Test_loclist_replace_autocmd()
+  %bw!
+  call setloclist(0, [], 'f')
+  let s:bufnr = bufnr()
+  cal setloclist(0, [{'0': 0, '': ''}])
+  au BufEnter * cal setloclist(1, [{'t': ''}, {'bufnr': s:bufnr}], 'r')
+  lopen
+  try
+    exe "norm j\<CR>"
+  catch
+  endtry
+  lnext
+  %bw!
+  call setloclist(0, [], 'f')
+endfunc
 
 " Tests for the :cfile, :lfile, :caddfile, :laddfile, :cgetfile and :lgetfile
 " commands.
@@ -4004,6 +4021,22 @@ func Xgetlist_empty_tests(cchar)
 		\ 'changedtick' : 0, 'filewinid' : 0, 'qfbufnr' : 0,
                 \ 'quickfixtextfunc' : ''}, g:Xgetlist({'nr' : 5, 'all' : 0}))
   endif
+endfunc
+
+func Test_empty_list_quickfixtextfunc()
+  " This was crashing.  Can only reproduce by running it in a separate Vim
+  " instance.
+  let lines =<< trim END
+      func s:Func(o)
+              cgetexpr '0'
+      endfunc
+      cope
+      let &quickfixtextfunc = 's:Func'
+      cgetfile [ex
+  END
+  call writefile(lines, 'Xquickfixtextfunc')
+  call RunVim([], [], '-e -s -S Xquickfixtextfunc -c qa')
+  call delete('Xquickfixtextfunc')
 endfunc
 
 func Test_getqflist()
