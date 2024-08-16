@@ -358,6 +358,16 @@ func Test_compl_in_cmdwin()
   call feedkeys("q::GetInput T\<Tab>\<CR>:q\<CR>", 'tx!')
   call assert_equal('T', input)
 
+func Test_ins_complete_add()
+  " this was reading past the end of allocated memory
+  new
+  norm o
+  norm 7o
+  sil! norm o
+
+  bwipe!
+endfunc
+
 
   com! -nargs=1 -complete=var GetInput let input = <q-args>
   " Window-local variables
