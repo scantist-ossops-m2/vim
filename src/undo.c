@@ -2909,6 +2909,8 @@ u_undo_end(
     if ((fdo_flags & FDO_UNDO) && KeyTyped)
 	foldOpenCursor();
 #endif
+    if (VIsual_active)
+	check_pos(curbuf, &VIsual);
 
     if (global_busy	    /* no messages now, wait until global is finished */
 	    || !messaging())  /* 'lazyredraw' set, don't do messages now */
@@ -2967,6 +2969,8 @@ u_undo_end(
 	}
     }
 #endif
+    if (VIsual_active)
+	check_pos(curbuf, &VIsual);
 
     smsg_attr_keep(0, (char_u *)_("%ld %s; %s #%ld  %s"),
 	    u_oldcount < 0 ? -u_oldcount : u_oldcount,
