@@ -659,6 +659,32 @@ func Test_linewise_select_mode()
   exe "normal GkkgH\<Del>"
   call assert_equal(['', 'b', 'c'], getline(1, '$'))
 
+" this was leaving the end of the Visual area beyond the end of a line
+func Test_visual_ex_copy_line()
+  new
+  call setline(1, ["aaa", "bbbbbbbbbxbb"])
+  /x
+  exe "normal ggvjfxO"
+  t0
+  normal gNU
+  bwipe!
+endfunc
+
+" This was leaving the end of the Visual area beyond the end of a line.
+" Set 'undolevels' to start a new undo block.
+func Test_visual_undo_deletes_last_line()
+  new
+  call setline(1, ["aaa", "ccc", "dyd"])
+  set undolevels=100
+  exe "normal obbbbbbbbbxbb\<Esc>"
+  set undolevels=100
+  /y
+  exe "normal ggvjfxO"
+  undo
+  normal gNU
+  bwipe!
+endfunc
+
 
   " linewise select mode: delete middle two lines
   call deletebufline('', 1, '$')
