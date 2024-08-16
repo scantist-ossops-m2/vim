@@ -2523,6 +2523,19 @@ def Test_for_outside_of_function()
   delete('Xvim9for.vim')
 enddef
 
+def Test_skipped_redir()
+  var lines =<< trim END
+      def T()
+        if 0
+          redir =>l[0]
+          redir END
+        endif
+      enddef
+      defcompile
+  END
+  v9.CheckScriptSuccess(lines)
+enddef
+
 def Test_for_loop()
   var lines =<< trim END
       var result = ''
