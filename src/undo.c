@@ -2909,6 +2909,8 @@ u_undo_end(
     if ((fdo_flags & FDO_UNDO) && KeyTyped)
 	foldOpenCursor();
 #endif
+    if (VIsual_active)
+	check_pos(curbuf, &VIsual);
 
     if (global_busy	    /* no messages now, wait until global is finished */
 	    || !messaging())  /* 'lazyredraw' set, don't do messages now */
