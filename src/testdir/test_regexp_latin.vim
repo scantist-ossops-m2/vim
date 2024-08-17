@@ -1096,4 +1096,15 @@ func Test_using_invalid_visual_position()
   bwipe!
 endfunc
 
+func Test_recursive_substitute_expr()
+  new
+  func Repl()
+    s
+  endfunc
+  silent! s/\%')/~\=Repl()
+
+  bwipe!
+  delfunc Repl
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab
