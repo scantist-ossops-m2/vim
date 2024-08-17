@@ -4442,6 +4442,11 @@ nv_brackets(cmdarg_T *cap)
 	    clearop(cap->oap);
 	else
 	{
+	    // Make a copy, if the line was changed it will be freed.
+	    ptr = vim_strnsave(ptr, len);
+	    if (ptr == NULL)
+		return;
+
 	    find_pattern_in_path(ptr, 0, len, TRUE,
 		cap->count0 == 0 ? !isupper(cap->nchar) : FALSE,
 		((cap->nchar & 0xf) == ('d' & 0xf)) ?  FIND_DEFINE : FIND_ANY,
@@ -4450,6 +4455,7 @@ nv_brackets(cmdarg_T *cap)
 			    islower(cap->nchar) ? ACTION_SHOW : ACTION_GOTO,
 		cap->cmdchar == ']' ? curwin->w_cursor.lnum + 1 : (linenr_T)1,
 		(linenr_T)MAXLNUM);
+	    vim_free(ptr);
 	    curwin->w_set_curswant = TRUE;
 	}
     }
@@ -5028,19 +5034,23 @@ nv_replace(cmdarg_T *cap)
 	    {
 		/*
 		 * Get ptr again, because u_save and/or showmatch() will have
-		 * released the line.  At the same time we let know that the
-		 * line will be changed.
+		 * released the line.  This may also happen in ins_copychar().
+		 * At the same time we let know that the line will be changed.
 		 */
-		ptr = ml_get_buf(curbuf, curwin->w_cursor.lnum, TRUE);
 		if (cap->nchar == Ctrl_E || cap->nchar == Ctrl_Y)
 		{
 		  int c = ins_copychar(curwin->w_cursor.lnum
 					   + (cap->nchar == Ctrl_Y ? -1 : 1));
+
+		  ptr = ml_get_buf(curbuf, curwin->w_cursor.lnum, TRUE);
 		  if (c != NUL)
 		    ptr[curwin->w_cursor.col] = c;
 		}
 		else
+		{
+		    ptr = ml_get_buf(curbuf, curwin->w_cursor.lnum, TRUE);
 		    ptr[curwin->w_cursor.col] = cap->nchar;
+		}
 		if (p_sm && msg_silent == 0)
 		    showmatch(cap->nchar);
 		++curwin->w_cursor.col;
