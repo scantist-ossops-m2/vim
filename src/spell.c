@@ -2091,8 +2091,8 @@ did_set_spelllang(win_T *wp)
 	    {
 		spell_load_lang(lang);
 		// SpellFileMissing autocommands may do anything, including
-		// destroying the buffer we are using...
-		if (!bufref_valid(&bufref))
+		// destroying the buffer we are using or closing the window.
+		if (!bufref_valid(&bufref) || !win_valid_any_tab(wp))
 		{
 		    ret_msg = N_("E797: SpellFileMissing autocommand deleted buffer");
 		    goto theend;
@@ -3974,9 +3974,10 @@ spell_dump_compl(
 		    n = arridx[depth] + curi[depth];
 		    ++curi[depth];
 		    c = byts[n];
-		    if (c == 0)
+		    if (c == 0 || depth >= MAXWLEN - 1)
 		    {
-			// End of word, deal with the word.
+			// End of word or reached maximum length, deal with the
+			// word.
 			// Don't use keep-case words in the fold-case tree,
 			// they will appear in the keep-case tree.
 			// Only use the word when the region matches.
