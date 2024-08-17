@@ -3765,6 +3765,22 @@ func Xgetlist_empty_tests(cchar)
   endif
 endfunc
 
+func Test_empty_list_quickfixtextfunc()
+  " This was crashing.  Can only reproduce by running it in a separate Vim
+  " instance.
+  let lines =<< trim END
+      func s:Func(o)
+              cgetexpr '0'
+      endfunc
+      cope
+      let &quickfixtextfunc = 's:Func'
+      cgetfile [ex
+  END
+  call writefile(lines, 'Xquickfixtextfunc')
+  call RunVim([], [], '-e -s -S Xquickfixtextfunc -c qa')
+  call delete('Xquickfixtextfunc')
+endfunc
+
 func Test_getqflist()
   call Xgetlist_empty_tests('c')
   call Xgetlist_empty_tests('l')
@@ -5602,6 +5618,36 @@ func Test_win_gettype()
   wincmd p
   call assert_equal("loclist", win_gettype(wid))
   lclose
+endfunc
+
+func Test_quickfixtextfunc_recursive()
+  func s:QFTfunc(o)
+    cgete '0'
+  endfunc
+  copen
+  let &quickfixtextfunc = 's:QFTfunc'
+  cex ""
+
+  let &quickfixtextfunc = ''
+  cclose
+endfunc
+
+" Test for replacing the location list from an autocmd. This used to cause a
+" read from freed memory.
+func Test_loclist_replace_autocmd()
+  %bw!
+  call setloclist(0, [], 'f')
+  let s:bufnr = bufnr()
+  cal setloclist(0, [{'0': 0, '': ''}])
+  au BufEnter * cal setloclist(1, [{'t': ''}, {'bufnr': s:bufnr}], 'r')
+  lopen
+  try
+    exe "norm j\<CR>"
+  catch
+  endtry
+  lnext
+  %bw!
+  call setloclist(0, [], 'f')
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
