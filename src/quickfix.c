@@ -4464,7 +4464,7 @@ qf_fill_buffer(qf_list_T *qfl, buf_T *buf, qfline_T *old_last)
     }
 
     // Check if there is anything to display
-    if (qfl != NULL)
+    if (qfl != NULL && qfl->qf_start != NULL)
     {
 	char_u		dirname[MAXPATHL];
 
