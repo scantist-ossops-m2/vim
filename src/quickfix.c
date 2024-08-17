@@ -589,6 +589,7 @@ enum {
     QF_NOMEM = 3,
     QF_IGNORE_LINE = 4,
     QF_MULTISCAN = 5,
+    QF_ABORT = 6
 };
 
 /*
@@ -3100,7 +3101,7 @@ qf_jump_to_usable_window(int qf_fnum, int newwin, int *opened_window)
 /*
  * Edit the selected file or help file.
  * Returns OK if successfully edited the file, FAIL on failing to open the
- * buffer and NOTDONE if the quickfix/location list was freed by an autocmd
+ * buffer and QF_ABORT if the quickfix/location list was freed by an autocmd
  * when opening the buffer.
  */
     static int
@@ -3145,14 +3146,14 @@ qf_jump_edit_buffer(
 	{
 	    emsg(_("E924: Current window was closed"));
 	    *opened_window = FALSE;
-	    return NOTDONE;
+	    return QF_ABORT;
 	}
     }
 
     if (qfl_type == QFLT_QUICKFIX && !qflist_valid(NULL, save_qfid))
     {
 	emsg(_(e_current_quickfix_list_was_changed));
-	return NOTDONE;
+	return QF_ABORT;
     }
 
     // Check if the list was changed.  The pointers may happen to be identical,
@@ -3165,7 +3166,7 @@ qf_jump_edit_buffer(
 	    emsg(_(e_current_quickfix_list_was_changed));
 	else
 	    emsg(_(e_current_location_list_was_changed));
-	return NOTDONE;
+	return QF_ABORT;
     }
 
     return retval;
@@ -3263,7 +3264,8 @@ qf_jump_print_msg(
  * a new window.
  * Returns OK if successfully jumped or opened a window. Returns FAIL if not
  * able to jump/open a window.  Returns NOTDONE if a file is not associated
- * with the entry.
+ * with the entry.  Returns QF_ABORT if the quickfix/location list was modified
+ * by an autocmd.
  */
     static int
 qf_jump_open_window(
@@ -3289,7 +3291,7 @@ qf_jump_open_window(
 	    emsg(_(e_current_quickfix_list_was_changed));
 	else
 	    emsg(_(e_current_location_list_was_changed));
-	return FAIL;
+	return QF_ABORT;
     }
 
     // If currently in the quickfix window, find another window to show the
@@ -3313,7 +3315,7 @@ qf_jump_open_window(
 	    emsg(_(e_current_quickfix_list_was_changed));
 	else
 	    emsg(_(e_current_location_list_was_changed));
-	return FAIL;
+	return QF_ABORT;
     }
 
     return OK;
@@ -3324,7 +3326,7 @@ qf_jump_open_window(
  * particular line/column, adjust the folds and display a message about the
  * jump.
  * Returns OK on success and FAIL on failing to open the file/buffer.  Returns
- * NOTDONE if the quickfix/location list is freed by an autocmd when opening
+ * QF_ABORT if the quickfix/location list is freed by an autocmd when opening
  * the file.
  */
     static int
@@ -3452,14 +3454,20 @@ qf_jump_newwin(qf_info_T	*qi,
     retval = qf_jump_open_window(qi, qf_ptr, newwin, &opened_window);
     if (retval == FAIL)
 	goto failed;
+    if (retval == QF_ABORT)
+    {
+	qi = NULL;
+	qf_ptr = NULL;
+	goto theend;
+    }
     if (retval == NOTDONE)
 	goto theend;
 
     retval = qf_jump_to_buffer(qi, qf_index, qf_ptr, forceit, prev_winid,
 				  &opened_window, old_KeyTyped, print_message);
-    if (retval == NOTDONE)
+    if (retval == QF_ABORT)
     {
-	// Quickfix/location list is freed by an autocmd
+	// Quickfix/location list was modified by an autocmd
 	qi = NULL;
 	qf_ptr = NULL;
     }
@@ -4594,6 +4602,11 @@ call_qftf_func(qf_list_T *qfl, int qf_winid, long start_idx, long end_idx)
 {
     callback_T	*cb = &qftf_cb;
     list_T	*qftf_list = NULL;
+    static int	recursive = FALSE;
+
+    if (recursive)
+	return NULL;  // this doesn't work properly recursively
+    recursive = TRUE;
 
     // If 'quickfixtextfunc' is set, then use the user-supplied function to get
     // the text to display. Use the local value of 'quickfixtextfunc' if it is
@@ -4608,7 +4621,10 @@ call_qftf_func(qf_list_T *qfl, int qf_winid, long start_idx, long end_idx)
 
 	// create the dict argument
 	if ((d = dict_alloc_lock(VAR_FIXED)) == NULL)
+	{
+	    recursive = FALSE;
 	    return NULL;
+	}
 	dict_add_number(d, "quickfix", (long)IS_QF_LIST(qfl));
 	dict_add_number(d, "winid", (long)qf_winid);
 	dict_add_number(d, "id", (long)qfl->qf_id);
@@ -4631,6 +4647,7 @@ call_qftf_func(qf_list_T *qfl, int qf_winid, long start_idx, long end_idx)
 	dict_unref(d);
     }
 
+    recursive = FALSE;
     return qftf_list;
 }
 
@@ -4664,7 +4681,7 @@ qf_fill_buffer(qf_list_T *qfl, buf_T *buf, qfline_T *old_last, int qf_winid)
     }
 
     // Check if there is anything to display
-    if (qfl != NULL)
+    if (qfl != NULL && qfl->qf_start != NULL)
     {
 	char_u		dirname[MAXPATHL];
 	int		invalid_val = FALSE;
