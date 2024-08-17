@@ -420,6 +420,16 @@ func Test_compl_in_cmdwin()
   call feedkeys("q::GetInput b:test_\<Tab>\<CR>:q\<CR>", 'tx!')
   call assert_equal('b:test_', input)
 
+func Test_ins_complete_add()
+  " this was reading past the end of allocated memory
+  new
+  norm o
+  norm 7o
+  sil! norm o
+
+  bwipe!
+endfunc
+
 
   " Argument completion of buffer-local command
   func s:ComplInCmdwin_GlobalCompletionList(a, l, p)

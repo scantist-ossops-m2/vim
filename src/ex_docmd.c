@@ -1078,7 +1078,7 @@ do_cmdline(
 
 		    // Check for the next breakpoint at or after the ":while"
 		    // or ":for".
-		    if (breakpoint != NULL)
+		    if (breakpoint != NULL && lines_ga.ga_len > current_line)
 		    {
 			*breakpoint = dbg_find_breakpoint(
 			       getline_equal(fgetline, cookie, getsourceline),
@@ -3231,6 +3231,8 @@ parse_cmd_address(exarg_T *eap, char **errormsg, int silent)
 {
     int		address_count = 1;
     linenr_T	lnum;
+    int		need_check_cursor = FALSE;
+    int		ret = FAIL;
 
     // Repeat for all ',' or ';' separated addresses.
     for (;;)
@@ -3241,7 +3243,7 @@ parse_cmd_address(exarg_T *eap, char **errormsg, int silent)
 	lnum = get_address(eap, &eap->cmd, eap->addr_type, eap->skip, silent,
 					eap->addr_count == 0, address_count++);
 	if (eap->cmd == NULL)	// error detected
-	    return FAIL;
+	    goto theend;
 	if (lnum == MAXLNUM)
 	{
 	    if (*eap->cmd == '%')   // '%' - all lines
@@ -3286,14 +3288,14 @@ parse_cmd_address(exarg_T *eap, char **errormsg, int silent)
 			    // there is no Vim command which uses '%' and
 			    // ADDR_WINDOWS or ADDR_TABS
 			    *errormsg = _(e_invalid_range);
-			    return FAIL;
+			    goto theend;
 			}
 			break;
 		    case ADDR_TABS_RELATIVE:
 		    case ADDR_UNSIGNED:
 		    case ADDR_QUICKFIX:
 			*errormsg = _(e_invalid_range);
-			return FAIL;
+			goto theend;
 		    case ADDR_ARGUMENTS:
 			if (ARGCOUNT == 0)
 			    eap->line1 = eap->line2 = 0;
@@ -3325,7 +3327,7 @@ parse_cmd_address(exarg_T *eap, char **errormsg, int silent)
 		if (eap->addr_type != ADDR_LINES)
 		{
 		    *errormsg = _(e_invalid_range);
-		    return FAIL;
+		    goto theend;
 		}
 
 		++eap->cmd;
@@ -3333,11 +3335,11 @@ parse_cmd_address(exarg_T *eap, char **errormsg, int silent)
 		{
 		    fp = getmark('<', FALSE);
 		    if (check_mark(fp) == FAIL)
-			return FAIL;
+			goto theend;
 		    eap->line1 = fp->lnum;
 		    fp = getmark('>', FALSE);
 		    if (check_mark(fp) == FAIL)
-			return FAIL;
+			goto theend;
 		    eap->line2 = fp->lnum;
 		    ++eap->addr_count;
 		}
@@ -3352,10 +3354,16 @@ parse_cmd_address(exarg_T *eap, char **errormsg, int silent)
 	    if (!eap->skip)
 	    {
 		curwin->w_cursor.lnum = eap->line2;
+
 		// Don't leave the cursor on an illegal line or column, but do
-		// accept zero as address, so 0;/PATTERN/ works correctly.
+		// accept zero as address, so 0;/PATTERN/ works correctly
+		// (where zero usually means to use the first line).
+		// Check the cursor position before returning.
 		if (eap->line2 > 0)
 		    check_cursor();
+		else
+		    check_cursor_col();
+		need_check_cursor = TRUE;
 	    }
 	}
 	else if (*eap->cmd != ',')
@@ -3371,7 +3379,12 @@ parse_cmd_address(exarg_T *eap, char **errormsg, int silent)
 	if (lnum == MAXLNUM)
 	    eap->addr_count = 0;
     }
-    return OK;
+    ret = OK;
+
+theend:
+    if (need_check_cursor)
+	check_cursor();
+    return ret;
 }
 
 /*
@@ -3640,7 +3653,8 @@ find_ex_command(
 	}
 
 	// Check for "++nr" and "--nr".
-	if (p == eap->cmd && p[0] == p[1] && (*p == '+' || *p == '-'))
+	if (p == eap->cmd && p[0] != NUL && p[0] == p[1]
+						   && (*p == '+' || *p == '-'))
 	{
 	    eap->cmdidx = *p == '+' ? CMD_increment : CMD_decrement;
 	    return eap->cmd + 2;
