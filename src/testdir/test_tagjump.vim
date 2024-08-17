@@ -260,6 +260,12 @@ func Test_tagjump_etags()
   call delete('Xtags')
   call delete('Xmain.c')
   bwipe!
+
+  new somefile
+  call setline(1, ['first line', '', '#define something 0'])
+  sil norm 0o0
+  sil! norm ]d
+  bwipe!
 endfunc
 
 " Test for getting and modifying the tag stack
