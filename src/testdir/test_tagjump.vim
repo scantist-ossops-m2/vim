@@ -255,6 +255,12 @@ func Test_tagjump_etags()
   call delete('Xtags')
   call delete('Xmain.c')
   bwipe!
+
+  new somefile
+  call setline(1, ['first line', '', '#define something 0'])
+  sil norm 0o0
+  sil! norm ]d
+  bwipe!
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
