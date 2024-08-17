@@ -799,6 +799,7 @@ getcmdline_int(
     int		indent,		// indent for inside conditionals
     int		init_ccline)	// clear ccline first
 {
+    static int	depth = 0;	    // call depth
     int		c;
     int		i;
     int		j;
@@ -827,6 +828,9 @@ getcmdline_int(
     cmdline_info_T save_ccline;
     int		did_save_ccline = FALSE;
     int		cmdline_type;
+
+    // one recursion level deeper
+    ++depth;
 
     if (ccline.cmdbuff != NULL)
     {
@@ -879,6 +883,13 @@ getcmdline_int(
 	ccline.cmdpos = indent;
 	ccline.cmdspos = indent;
 	ccline.cmdlen = indent;
+    }
+
+    if (depth == 50)
+    {
+	// Somehow got into a loop recursively calling getcmdline(), bail out.
+	emsg(_(e_command_too_recursive));
+	goto theend;
     }
 
     ExpandInit(&xpc);
@@ -2430,6 +2441,7 @@ theend:
     {
 	char_u *p = ccline.cmdbuff;
 
+	--depth;
 	if (did_save_ccline)
 	    restore_cmdline(&save_ccline);
 	else
