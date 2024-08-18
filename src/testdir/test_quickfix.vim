@@ -5099,4 +5099,17 @@ func Test_lopen_bwipe_all()
 endfunc
 
 
+func Test_quickfixtextfunc_recursive()
+  func s:QFTfunc(o)
+    cgete '0'
+  endfunc
+  copen
+  let &quickfixtextfunc = 's:QFTfunc'
+  cex ""
+
+  let &quickfixtextfunc = ''
+  cclose
+endfunc
+
+
 " vim: shiftwidth=2 sts=2 expandtab
