@@ -965,6 +965,21 @@ func Test_edit_completefunc_delete()
   bwipe!
 endfunc
 
+" Weird long file name was going over the end of NameBuff
+func Test_edit_overlong_file_name()
+  CheckUnix
+
+  file 0000000000000000000000000000
+  file %%%%%%%%%%%%%%%%%%%%%%%%%%
+  file %%%%%%
+  set readonly
+  set ls=2 
+
+  redraw!
+  set noreadonly ls&
+  bwipe!
+endfunc
+
 
 func Test_edit_CTRL_Z()
   " Ctrl-Z when insertmode is not set inserts it literally
@@ -1868,6 +1883,18 @@ func Test_read_invalid()
   set encoding=latin1
   " This was not properly checking for going past the end.
   call assert_fails('r`=', 'E484')
+  set encoding=utf-8
+endfunc
+
+" Test for getting the character of the line below after "p"
+func Test_edit_put_CTRL_E()
+  set encoding=latin1
+  new
+  let @" = ''
+  sil! norm orggRx
+  sil! norm pr
+  call assert_equal(['r', 'r'], getline(1, 2))
+  bwipe!
   set encoding=utf-8
 endfunc
 
