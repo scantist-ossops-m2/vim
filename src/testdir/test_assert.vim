@@ -45,6 +45,14 @@ func Test_assert_equal()
   call assert_equal('XxxxxxxxxxxxxxxxxxxxxxX', 'XyyyyyyyyyyyyyyyyyyyyyyyyyX')
   call assert_match("Expected 'X\\\\\\[x occurs 21 times]X' but got 'X\\\\\\[y occurs 25 times]X'", v:errors[0])
   call remove(v:errors, 0)
+
+  " many composing characters are handled properly
+  call setline(1, ' ')
+  norm 100gr›Ä
+  call assert_equal(1, getline(1))
+  call assert_match("Expected 1 but got '.* occurs 100 times]'", v:errors[0])
+  call remove(v:errors, 0)
+  bwipe!
 endfunc
 
 func Test_assert_equalfile()
