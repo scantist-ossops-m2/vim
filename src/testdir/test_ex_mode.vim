@@ -171,4 +171,14 @@ func Test_Ex_echo_backslash()
         \ "E15: Invalid expression: \\\nm")
 endfunc
 
+func Test_ex_mode_large_indent()
+  new
+  set ts=500 ai
+  call setline(1, "\t")
+  exe "normal gQi\<CR>."
+  set ts=8 noai
+  bwipe!
+endfunc
+
+
 " vim: shiftwidth=2 sts=2 expandtab
