@@ -1068,6 +1068,8 @@ ex_copy(linenr_T line1, linenr_T line2, linenr_T n)
     }
 
     appended_lines_mark(n, count);
+    if (VIsual_active)
+	check_pos(curbuf, &VIsual);
 
     msgmore((long)count);
 }
@@ -4774,7 +4776,7 @@ check_restricted(void)
 {
     if (restricted)
     {
-	emsg(_("E145: Shell commands not allowed in rvim"));
+	emsg(_("E145: Shell commands and some functionality not allowed in rvim"));
 	return TRUE;
     }
     return FALSE;
