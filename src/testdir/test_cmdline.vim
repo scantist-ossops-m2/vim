@@ -1330,4 +1330,16 @@ func Test_cmdwin_blocked_commands()
   call assert_fails('call feedkeys("q:\<F1>\<CR>", "xt")', 'E11:')
 endfunc
 
+func Test_recursive_register()
+  let @= = ''
+  silent! ?e/
+  let caught = 'no'
+  try
+    normal // 
+  catch /E169:/
+    let caught = 'yes'
+  endtry
+  call assert_equal('yes', caught)
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab
