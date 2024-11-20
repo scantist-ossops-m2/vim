@@ -1187,6 +1187,8 @@ op_replace(oparg_T *oap, int c)
 
 	while (LTOREQ_POS(curwin->w_cursor, oap->end))
 	{
+	    int done = FALSE;
+
 	    n = gchar_cursor();
 	    if (n != NUL)
 	    {
@@ -1197,6 +1199,7 @@ op_replace(oparg_T *oap, int c)
 		    if (curwin->w_cursor.lnum == oap->end.lnum)
 			oap->end.col += (*mb_char2len)(c) - (*mb_char2len)(n);
 		    replace_character(c);
+		    done = TRUE;
 		}
 		else
 		{
@@ -1215,10 +1218,15 @@ op_replace(oparg_T *oap, int c)
 			if (curwin->w_cursor.lnum == oap->end.lnum)
 			    getvpos(&oap->end, end_vcol);
 		    }
-		    PBYTE(curwin->w_cursor, c);
+		    // with "coladd" set may move to just after a TAB
+		    if (gchar_cursor() != NUL)
+		    {
+			PBYTE(curwin->w_cursor, c);
+			done = TRUE;
+		    }
 		}
 	    }
-	    else if (virtual_op && curwin->w_cursor.lnum == oap->end.lnum)
+	    if (!done && virtual_op && curwin->w_cursor.lnum == oap->end.lnum)
 	    {
 		int virtcols = oap->end.coladd;
 
@@ -3358,7 +3366,7 @@ do_addsub(
 	    for (bit = bits; bit > 0; bit--)
 		if ((n >> (bit - 1)) & 0x1) break;
 
-	    for (i = 0; bit > 0; bit--)
+	    for (i = 0; bit > 0 && i < (NUMBUFLEN - 1); bit--)
 		buf2[i++] = ((n >> (bit - 1)) & 0x1) ? '1' : '0';
 
 	    buf2[i] = '\0';
