@@ -251,3 +251,5 @@ EXTERN char e_overlapping_ranges_for_nr[]
 EXTERN char e_only_values_of_0x100_and_higher_supported[]
 	INIT(= N_("E1114: Only values of 0x100 and higher supported"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
