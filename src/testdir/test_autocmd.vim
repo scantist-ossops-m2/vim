@@ -2611,6 +2611,16 @@ func Test_FileType_spell()
   setglobal spellfile=
 endfunc
 
+" this was wiping out the current buffer and using freed memory
+func Test_SpellFileMissing_bwipe()
+  next 0
+  au SpellFileMissing 0 bwipe
+  call assert_fails('set spell spelllang=0', 'E937:')
+
+  au! SpellFileMissing
+  bwipe
+endfunc
+
 " Test closing a window or editing another buffer from a FileChangedRO handler
 " in a readonly buffer
 func Test_FileChangedRO_winclose()
@@ -3040,5 +3050,25 @@ func Test_bufwipeout_changes_window()
   %bwipe!
 endfunc
 
+
+func Test_autocmd_split_dummy()
+  " Autocommand trying to split a window containing a dummy buffer.
+  auto BufReadPre * exe "sbuf " .. expand("<abuf>") 
+  " Avoid the "W11" prompt
+  au FileChangedShell * let v:fcs_choice = 'reload'
+  func Xautocmd_changelist()
+    cal writefile(['Xtestfile2:4:4'], 'Xerr')
+    edit Xerr
+    lex 'Xtestfile2:4:4'
+  endfunc
+  call Xautocmd_changelist()
+  call assert_fails('call Xautocmd_changelist()', 'E86:')
+
+  au! BufReadPre
+  au! FileChangedShell
+  delfunc Xautocmd_changelist
+  bwipe! Xerr
+  call delete('Xerr')
+endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
