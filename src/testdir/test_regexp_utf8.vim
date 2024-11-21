@@ -1,5 +1,7 @@
 " Tests for regexp in utf8 encoding
 
+source shared.vim
+
 func s:equivalence_test()
   let str = "AÀÁÂÃÄÅĀĂĄǍǞǠẢ BḂḆ CÇĆĈĊČ DĎĐḊḎḐ EÈÉÊËĒĔĖĘĚẺẼ FḞ GĜĞĠĢǤǦǴḠ HĤĦḢḦḨ IÌÍÎÏĨĪĬĮİǏỈ JĴ KĶǨḰḴ LĹĻĽĿŁḺ MḾṀ NÑŃŅŇṄṈ OÒÓÔÕÖØŌŎŐƠǑǪǬỎ PṔṖ Q RŔŖŘṘṞ SŚŜŞŠṠ TŢŤŦṪṮ UÙÚÛÜŨŪŬŮŰŲƯǓỦ VṼ WŴẀẂẄẆ XẊẌ YÝŶŸẎỲỶỸ ZŹŻŽƵẐẔ aàáâãäåāăąǎǟǡả bḃḇ cçćĉċč dďđḋḏḑ eèéêëēĕėęěẻẽ fḟ gĝğġģǥǧǵḡ hĥħḣḧḩẖ iìíîïĩīĭįǐỉ jĵǰ kķǩḱḵ lĺļľŀłḻ mḿṁ nñńņňŉṅṉ oòóôõöøōŏőơǒǫǭỏ pṕṗ q rŕŗřṙṟ sśŝşšṡ tţťŧṫṯẗ uùúûüũūŭůűųưǔủ vṽ wŵẁẃẅẇẘ xẋẍ yýÿŷẏẙỳỷỹ zźżžƶẑẕ"
   let groups = split(str)
@@ -513,7 +515,6 @@ endfunc
 " Check that [[:upper:]] matches for automatic engine
 func Test_match_char_class_upper()
   new
-  let _engine=&regexpengine
 
   " Test 1: [[:upper:]]\{2,\}
   set regexpengine=0
@@ -554,8 +555,38 @@ func Test_match_char_class_upper()
   call assert_equal(4, searchcount().total, 'TEST 3 lower')
 
   " clean up
-  let &regexpengine=_engine
+  set regexpengine=0
   bwipe!
 endfunc
+
+func Test_match_invalid_byte()
+  call writefile(0z630a.765d30aa0a.2e0a.790a.4030, 'Xinvalid')
+  new
+  source Xinvalid
+  bwipe!
+  call delete('Xinvalid')
+endfunc
+
+func Test_match_illegal_byte()
+  let lines =<< trim END
+      silent! buffer ÿ\c
+      next ÿ
+      0scriptnames
+      source
+  END
+  call writefile(lines, 'Xregexp')
+  call system(GetVimCommand() .. ' -X -Z -e -s -S Xregexp -c qa!')
+
+  call delete('Xregexp')
+endfunc
+
+func Test_match_too_complicated()
+  set regexpengine=1
+  exe "vsplit \xeb\xdb\x99"
+  silent! buf \&\zs*\zs*0
+  bwipe!
+  set regexpengine=0
+endfunc
+
 
 " vim: shiftwidth=2 sts=2 expandtab
