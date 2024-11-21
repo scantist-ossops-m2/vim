@@ -3256,3 +3256,5 @@ EXTERN char e_compiling_closure_without_context_str[]
 EXTERN char e_using_type_not_in_script_context_str[]
 	INIT(= N_("E1272: Using type not in a script context: %s"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
