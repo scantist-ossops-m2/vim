@@ -257,3 +257,5 @@ EXTERN char e_assert_fails_fourth_argument[]
 EXTERN char e_assert_fails_fifth_argument[]
 	INIT(= N_("E1116: assert_fails() fifth argument must be a string"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
