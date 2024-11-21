@@ -3306,3 +3306,5 @@ EXTERN char e_substitute_nesting_too_deep[]
 EXTERN char e_invalid_argument_nr[]
 	INIT(= N_("E1291: Invalid argument: %ld"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
