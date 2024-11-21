@@ -822,6 +822,7 @@ compile_nested_function(exarg_T *eap, cctx_T *cctx, garray_T *lines_to_free)
     int		r = FAIL;
     compiletype_T   compile_type;
     isn_T	*funcref_isn = NULL;
+    lvar_T	*lvar = NULL;
 
     if (eap->forceit)
     {
@@ -928,9 +929,8 @@ compile_nested_function(exarg_T *eap, cctx_T *cctx, garray_T *lines_to_free)
     else
     {
 	// Define a local variable for the function reference.
-	lvar_T	*lvar = reserve_local(cctx, func_name, name_end - name_start,
+	lvar = reserve_local(cctx, func_name, name_end - name_start,
 						    TRUE, ufunc->uf_func_type);
-
 	if (lvar == NULL)
 	    goto theend;
 	if (generate_FUNCREF(cctx, ufunc, &funcref_isn) == FAIL)
@@ -949,6 +949,9 @@ compile_nested_function(exarg_T *eap, cctx_T *cctx, garray_T *lines_to_free)
 	    && compile_def_function(ufunc, TRUE, compile_type, cctx) == FAIL)
     {
 	func_ptr_unref(ufunc);
+	if (lvar != NULL)
+	    // Now the local variable can't be used.
+	    *lvar->lv_name = '/';  // impossible value
 	goto theend;
     }
 
@@ -1154,11 +1157,14 @@ generate_loadvar(
 	    generate_LOADV(cctx, name + 2);
 	    break;
 	case dest_local:
-	    if (lvar->lv_from_outer > 0)
-		generate_LOADOUTER(cctx, lvar->lv_idx, lvar->lv_from_outer,
+	    if (cctx->ctx_skip != SKIP_YES)
+	    {
+		if (lvar->lv_from_outer > 0)
+		    generate_LOADOUTER(cctx, lvar->lv_idx, lvar->lv_from_outer,
 									 type);
-	    else
-		generate_LOAD(cctx, ISN_LOAD, lvar->lv_idx, NULL, type);
+		else
+		    generate_LOAD(cctx, ISN_LOAD, lvar->lv_idx, NULL, type);
+	    }
 	    break;
 	case dest_expr:
 	    // list or dict value should already be on the stack.
@@ -1209,6 +1215,19 @@ vim9_declare_error(char_u *name)
 	default: return;
     }
     semsg(_(e_cannot_declare_a_scope_variable), scope, name);
+}
+
+/*
+ * Return TRUE if "name" is a valid register to use.
+ * Return FALSE and give an error message if not.
+ */
+    static int
+valid_dest_reg(int name)
+{
+    if ((name == '@' || valid_yank_reg(name, FALSE)) && name != '.')
+	return TRUE;
+    emsg_invreg(name);
+    return FAIL;
 }
 
 /*
@@ -1292,12 +1311,8 @@ get_var_dest(
     }
     else if (*name == '@')
     {
-	if (name[1] != '@'
-			&& (!valid_yank_reg(name[1], FALSE) || name[1] == '.'))
-	{
-	    emsg_invreg(name[1]);
+	if (!valid_dest_reg(name[1]))
 	    return FAIL;
-	}
 	*dest = dest_reg;
 	*type = name[1] == '#' ? &t_number_or_string : &t_string;
     }
@@ -1373,7 +1388,11 @@ compile_lhs(
     // "var_end" is the end of the variable/option/etc. name.
     lhs->lhs_dest_end = skip_var_one(var_start, FALSE);
     if (*var_start == '@')
+    {
+	if (!valid_dest_reg(var_start[1]))
+	    return FAIL;
 	var_end = var_start + 2;
+    }
     else
     {
 	// skip over the leading "&", "&l:", "&g:" and "$"
@@ -1940,6 +1959,9 @@ compile_assign_unlet(
 		return FAIL;
 	}
     }
+
+    if (cctx->ctx_skip == SKIP_YES)
+	return OK;
 
     // Load the dict or list.  On the stack we then have:
     // - value (for assignment, not for :unlet)
