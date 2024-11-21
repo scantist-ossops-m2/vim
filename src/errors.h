@@ -3235,3 +3235,5 @@ EXTERN char e_function_name_must_start_with_capital_str[]
 EXTERN char e_cannot_use_s_colon_in_vim9_script_str[]
 	INIT(= N_("E1268: Cannot use s: in Vim9 script: %s"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
