@@ -3273,3 +3273,5 @@ EXTERN char e_stray_closing_curly_str[]
 EXTERN char e_missing_close_curly_str[]
 	INIT(= N_("E1279: Missing '}': %s"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
