@@ -907,6 +907,18 @@ def Test_nested_function()
   v9.CheckScriptFailure(lines, 'E1173: Text found after enddef: burp', 3)
 enddef
 
+def Test_nested_function_fails()
+  var lines =<< trim END
+      def T()
+        def Func(g: string):string
+        enddef
+        Func()
+      enddef
+      silent! defcompile
+  END
+  v9.CheckScriptFailure(lines, 'E1069:')
+enddef
+
 def Test_not_nested_function()
   echo printf('%d',
       function('len')('xxx'))
@@ -4106,6 +4118,33 @@ func Test_lambda_allocation_failure()
   call assert_false(exists('g:Xlambda'))
   bw!
 endfunc
+
+def Test_invalid_redir()
+  var lines =<< trim END
+      def Tone()
+        if 1
+          redi =>@ 0
+          redi END
+        endif
+      enddef
+      defcompile
+  END
+  v9.CheckScriptFailure(lines, 'E354:')
+  delfunc g:Tone
+
+  # this was reading past the end of the line
+  lines =<< trim END
+      def Ttwo()
+        if 0
+          redi =>@ 0
+          redi END
+        endif
+      enddef
+      defcompile
+  END
+  v9.CheckScriptFailure(lines, 'E354:')
+  delfunc g:Ttwo
+enddef
 
 " The following messes up syntax highlight, keep near the end.
 if has('python3')
