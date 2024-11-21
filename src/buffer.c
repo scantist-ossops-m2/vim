@@ -463,7 +463,12 @@ can_unload_buffer(buf_T *buf)
 	    }
     }
     if (!can_unload)
-	semsg(_(e_attempt_to_delete_buffer_that_is_in_use_str), buf->b_fname);
+    {
+	char_u *fname = buf->b_fname != NULL ? buf->b_fname : buf->b_ffname;
+
+	semsg(_(e_attempt_to_delete_buffer_that_is_in_use_str),
+				fname != NULL ? fname : (char_u *)"[No Name]");
+    }
     return can_unload;
 }
 
@@ -1329,6 +1334,13 @@ do_buffer_ext(
        )
 	return OK;
 #endif
+    if ((action == DOBUF_GOTO || action == DOBUF_SPLIT)
+						  && (buf->b_flags & BF_DUMMY))
+    {
+	// disallow navigating to the dummy buffer
+	semsg(_(e_buffer_nr_does_not_exist), count);
+	return FAIL;
+    }
 
 #ifdef FEAT_GUI
     need_mouse_correct = TRUE;
@@ -2642,13 +2654,15 @@ buflist_findpat(
 		if (*p == '^' && !(attempt & 1))	 // add/remove '^'
 		    ++p;
 		regmatch.regprog = vim_regcomp(p, magic_isset() ? RE_MAGIC : 0);
-		if (regmatch.regprog == NULL)
-		{
-		    vim_free(pat);
-		    return -1;
-		}
 
 		FOR_ALL_BUFS_FROM_LAST(buf)
+		{
+		    if (regmatch.regprog == NULL)
+		    {
+			// invalid pattern, possibly after switching engine
+			vim_free(pat);
+			return -1;
+		    }
 		    if (buf->b_p_bl == find_listed
 #ifdef FEAT_DIFF
 			    && (!diffmode || diff_mode_buf(buf))
@@ -2674,6 +2688,7 @@ buflist_findpat(
 			}
 			match = buf->b_fnum;	// remember first match
 		    }
+		}
 
 		vim_regfree(regmatch.regprog);
 		if (match >= 0)			// found one match
@@ -2766,12 +2781,6 @@ ExpandBufnames(
 	    if (attempt > 0 && patc == pat)
 		break;	// there was no anchor, no need to try again
 	    regmatch.regprog = vim_regcomp(patc + attempt * 11, RE_MAGIC);
-	    if (regmatch.regprog == NULL)
-	    {
-		if (patc != pat)
-		    vim_free(patc);
-		return FAIL;
-	    }
 	}
 
 	// round == 1: Count the matches.
@@ -2792,7 +2801,16 @@ ExpandBufnames(
 #endif
 
 		if (!fuzzy)
+		{
+		    if (regmatch.regprog == NULL)
+		    {
+			// invalid pattern, possibly after recompiling
+			if (patc != pat)
+			    vim_free(patc);
+			return FAIL;
+		    }
 		    p = buflist_match(&regmatch, buf, p_wic);
+		}
 		else
 		{
 		    p = NULL;
@@ -2921,6 +2939,7 @@ ExpandBufnames(
 
 /*
  * Check for a match on the file name for buffer "buf" with regprog "prog".
+ * Note that rmp->regprog may become NULL when switching regexp engine.
  */
     static char_u *
 buflist_match(
@@ -2939,7 +2958,8 @@ buflist_match(
 }
 
 /*
- * Try matching the regexp in "prog" with file name "name".
+ * Try matching the regexp in "rmp->regprog" with file name "name".
+ * Note that rmp->regprog may become NULL when switching regexp engine.
  * Return "name" when there is a match, NULL when not.
  */
     static char_u *
@@ -2951,7 +2971,8 @@ fname_match(
     char_u	*match = NULL;
     char_u	*p;
 
-    if (name != NULL)
+    // extra check for valid arguments
+    if (name != NULL && rmp->regprog != NULL)
     {
 	// Ignore case when 'fileignorecase' or the argument is set.
 	rmp->rm_ic = p_fic || ignore_case;
@@ -4567,6 +4588,8 @@ build_stl_str_hl(
 #endif
 	if (vim_strchr(STL_ALL, *s) == NULL)
 	{
+	    if (*s == NUL)  // can happen with "%0"
+		break;
 	    s++;
 	    continue;
 	}
@@ -5307,6 +5330,10 @@ ex_buffer_all(exarg_T *eap)
 	all = FALSE;
     else
 	all = TRUE;
+
+    // Stop Visual mode, the cursor and "VIsual" may very well be invalid after
+    // switching to another buffer.
+    reset_VIsual_and_resel();
 
     setpcmark();
 
