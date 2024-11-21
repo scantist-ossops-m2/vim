@@ -1343,6 +1343,13 @@ do_buffer_ext(
        )
 	return OK;
 #endif
+    if ((action == DOBUF_GOTO || action == DOBUF_SPLIT)
+						  && (buf->b_flags & BF_DUMMY))
+    {
+	// disallow navigating to the dummy buffer
+	semsg(_(e_buffer_nr_does_not_exist), count);
+	return FAIL;
+    }
 
 #ifdef FEAT_GUI
     need_mouse_correct = TRUE;
