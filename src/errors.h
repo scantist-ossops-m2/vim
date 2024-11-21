@@ -3204,3 +3204,5 @@ EXTERN char e_cannot_import_dot_vim_without_using_as[]
 EXTERN char e_cannot_import_same_script_twice_str[]
 	INIT(= N_("E1262: Cannot import the same script twice: %s"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
