@@ -3488,6 +3488,21 @@ func Test_resize_from_copen()
   endtry
 endfunc
 
+func Test_filetype_autocmd()
+  " this changes the location list while it is in use to fill a buffer
+  lexpr ''
+  lopen
+  augroup FT_loclist
+    au FileType * call setloclist(0, [], 'f')
+  augroup END
+  silent! lolder
+  lexpr ''
+
+  augroup FT_loclist
+    au! FileType
+  augroup END
+endfunc
+
 func Test_vimgrep_with_textlock()
   new
 
@@ -4105,6 +4120,22 @@ func Xgetlist_empty_tests(cchar)
 		\ 'changedtick' : 0, 'filewinid' : 0, 'qfbufnr' : 0,
                 \ 'quickfixtextfunc' : ''}, g:Xgetlist({'nr' : 5, 'all' : 0}))
   endif
+endfunc
+
+func Test_empty_list_quickfixtextfunc()
+  " This was crashing.  Can only reproduce by running it in a separate Vim
+  " instance.
+  let lines =<< trim END
+      func s:Func(o)
+              cgetexpr '0'
+      endfunc
+      cope
+      let &quickfixtextfunc = 's:Func'
+      cgetfile [ex
+  END
+  call writefile(lines, 'Xquickfixtextfunc')
+  call RunVim([], [], '-e -s -S Xquickfixtextfunc -c qa')
+  call delete('Xquickfixtextfunc')
 endfunc
 
 func Test_getqflist()
@@ -6350,5 +6381,36 @@ func Test_qflist_statusmsg()
   augroup END
   %bw!
 endfunc
+
+func Test_quickfixtextfunc_recursive()
+  func s:QFTfunc(o)
+    cgete '0'
+  endfunc
+  copen
+  let &quickfixtextfunc = 's:QFTfunc'
+  cex ""
+
+  let &quickfixtextfunc = ''
+  cclose
+endfunc
+
+" Test for replacing the location list from an autocmd. This used to cause a
+" read from freed memory.
+func Test_loclist_replace_autocmd()
+  %bw!
+  call setloclist(0, [], 'f')
+  let s:bufnr = bufnr()
+  cal setloclist(0, [{'0': 0, '': ''}])
+  au BufEnter * cal setloclist(1, [{'t': ''}, {'bufnr': s:bufnr}], 'r')
+  lopen
+  try
+    exe "norm j\<CR>"
+  catch
+  endtry
+  lnext
+  %bw!
+  call setloclist(0, [], 'f')
+endfunc
+
 
 " vim: shiftwidth=2 sts=2 expandtab
