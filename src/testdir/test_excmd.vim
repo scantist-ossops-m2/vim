@@ -710,5 +710,9 @@ func Test_address_line_overflow()
   bwipe!
 endfunc
 
+" catch address lines overflow
+func Test_ex_address_range_overflow()
+  call assert_fails(':--+foobar', 'E492:')
+endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
