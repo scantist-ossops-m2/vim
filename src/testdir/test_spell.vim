@@ -143,6 +143,19 @@ func Test_spell_file_missing()
   %bwipe!
 endfunc
 
+func Test_spell_file_missing_bwipe()
+  " this was using a window that was wiped out in a SpellFileMissing autocmd
+  set spelllang=xy
+  au SpellFileMissing * n0
+  set spell
+  au SpellFileMissing * bw
+  snext somefile
+
+  au! SpellFileMissing
+  bwipe!
+  set nospell spelllang=en
+endfunc
+
 func Test_spelldump()
   set spell spelllang=en
   spellrare! emacs
@@ -233,6 +246,18 @@ func Test_spellreall()
   call assert_fails('spellrepall', 'E753:')
   set spell&
   bwipe!
+endfunc
+
+func Test_spell_dump_word_length()
+  " this was running over MAXWLEN
+  new
+  noremap 0 0a0zW0000000
+  sil! norm 0z=0
+  sil norm 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  sil! norm 0z=0
+
+  bwipe!
+  nunmap 0
 endfunc
 
 " Test spellsuggest({word} [, {max} [, {capital}]])
@@ -454,6 +479,21 @@ func Test_spellsuggest_timeout()
   call assert_fails('set spellsuggest=timeout:x', 'E474:')
   call assert_fails('set spellsuggest=timeout:-x', 'E474:')
   call assert_fails('set spellsuggest=timeout:--9', 'E474:')
+endfunc
+
+func Test_spellsuggest_visual_end_of_line()
+  let enc_save = &encoding
+  set encoding=iso8859
+
+  " This was reading beyond the end of the line.
+  norm R00000000000
+  sil norm 0
+  sil! norm i00000)
+  sil! norm i00000)
+  call feedkeys("\<CR>")
+  norm z=
+
+  let &encoding = enc_save
 endfunc
 
 func Test_spellinfo()
@@ -867,6 +907,15 @@ func Test_spell_single_word()
   silent! norm 0R00
   spell! ßÂ
   silent 0norm 0r$ Dvz=
+  bwipe!
+endfunc
+
+func Test_z_equal_with_large_count()
+  split
+  set spell
+  call setline(1, "ff")
+  norm 0z=337203685477580
+  set nospell
   bwipe!
 endfunc
 
