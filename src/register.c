@@ -1230,6 +1230,8 @@ op_yank(oparg_T *oap, int deleting, int mess)
 				// double-count it.
 				bd.startspaces = (ce - cs + 1)
 							  - oap->start.coladd;
+				if (bd.startspaces < 0)
+				    bd.startspaces = 0;
 				startcol++;
 			    }
 			}
@@ -1885,6 +1887,8 @@ do_put(
 	// adjust '] mark
 	curbuf->b_op_end.lnum = curwin->w_cursor.lnum - 1;
 	curbuf->b_op_end.col = bd.textcol + totlen - 1;
+	if (curbuf->b_op_end.col < 0)
+	    curbuf->b_op_end.col = 0;
 	curbuf->b_op_end.coladd = 0;
 	if (flags & PUT_CURSEND)
 	{
