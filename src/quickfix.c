@@ -6023,6 +6023,8 @@ vgr_match_buflines(
     long	lnum;
     colnr_T	col;
     int		pat_len = (int)STRLEN(spat);
+    if (pat_len > MAX_FUZZY_MATCHES)
+	pat_len = MAX_FUZZY_MATCHES;
 
     for (lnum = 1; lnum <= buf->b_ml.ml_line_count && *tomatch > 0; ++lnum)
     {
@@ -6031,7 +6033,7 @@ vgr_match_buflines(
 	{
 	    // Regular expression match
 	    while (vim_regexec_multi(regmatch, curwin, buf, lnum,
-			col, NULL) > 0)
+								col, NULL) > 0)
 	    {
 		// Pass the buffer number so that it gets used even for a
 		// dummy buffer, unless duplicate_name is set, then the
@@ -6077,6 +6079,7 @@ vgr_match_buflines(
 	    int_u   sz = ARRAY_LENGTH(matches);
 
 	    // Fuzzy string match
+	    CLEAR_FIELD(matches);
 	    while (fuzzy_match(str + col, spat, FALSE, &score, matches, sz) > 0)
 	    {
 		// Pass the buffer number so that it gets used even for a
