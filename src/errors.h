@@ -3300,3 +3300,5 @@ EXTERN char e_could_not_reset_handler_for_timeout_str[]
 EXTERN char e_could_not_check_for_pending_sigalrm_str[]
 	INIT(= N_("E1289: Could not check for pending SIGALRM: %s"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
