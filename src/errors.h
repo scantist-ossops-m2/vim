@@ -267,3 +267,5 @@ EXTERN char e_cannot_change_dict[]
 EXTERN char e_cannot_change_dict_item[]
 	INIT(= N_("E1121: Cannot change dict item"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
