@@ -3269,3 +3269,5 @@ EXTERN char e_channel_job_feature_not_available[]
 	INIT(= N_("E1277: Channel and job feature is not available"));
 # endif
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
