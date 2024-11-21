@@ -4595,6 +4595,9 @@ qf_update_buffer(qf_info_T *qi, qfline_T *old_last)
 	    qf_winid = win->w_id;
 	}
 
+	// autocommands may cause trouble
+	incr_quickfix_busy();
+
 	if (old_last == NULL)
 	    // set curwin/curbuf to buf and save a few things
 	    aucmd_prepbuf(&aco, buf);
@@ -4616,6 +4619,9 @@ qf_update_buffer(qf_info_T *qi, qfline_T *old_last)
 	// when the added lines are not visible.
 	if ((win = qf_find_win(qi)) != NULL && old_line_count < win->w_botline)
 	    redraw_buf_later(buf, UPD_NOT_VALID);
+
+	// always called after incr_quickfix_busy()
+	decr_quickfix_busy();
     }
 }
 
@@ -6038,6 +6044,8 @@ vgr_match_buflines(
     long	lnum;
     colnr_T	col;
     int		pat_len = (int)STRLEN(spat);
+    if (pat_len > MAX_FUZZY_MATCHES)
+	pat_len = MAX_FUZZY_MATCHES;
 
     for (lnum = 1; lnum <= buf->b_ml.ml_line_count && *tomatch > 0; ++lnum)
     {
@@ -6046,7 +6054,7 @@ vgr_match_buflines(
 	{
 	    // Regular expression match
 	    while (vim_regexec_multi(regmatch, curwin, buf, lnum,
-			col, NULL) > 0)
+								col, NULL) > 0)
 	    {
 		// Pass the buffer number so that it gets used even for a
 		// dummy buffer, unless duplicate_name is set, then the
@@ -6092,6 +6100,7 @@ vgr_match_buflines(
 	    int_u   sz = ARRAY_LENGTH(matches);
 
 	    // Fuzzy string match
+	    CLEAR_FIELD(matches);
 	    while (fuzzy_match(str + col, spat, FALSE, &score, matches, sz) > 0)
 	    {
 		// Pass the buffer number so that it gets used even for a
