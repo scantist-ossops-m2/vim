@@ -275,3 +275,5 @@ EXTERN char e_str_cannot_be_used_in_legacy_vim_script[]
 EXTERN char e_final_requires_a_value[]
 	INIT(= N_("E1125: Final requires a value"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
