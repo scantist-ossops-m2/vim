@@ -468,7 +468,12 @@ can_unload_buffer(buf_T *buf)
 	    }
     }
     if (!can_unload)
-	semsg(_(e_attempt_to_delete_buffer_that_is_in_use_str), buf->b_fname);
+    {
+	char_u *fname = buf->b_fname != NULL ? buf->b_fname : buf->b_ffname;
+
+	semsg(_(e_attempt_to_delete_buffer_that_is_in_use_str),
+				fname != NULL ? fname : (char_u *)"[No Name]");
+    }
     return can_unload;
 }
 
@@ -1333,6 +1338,13 @@ do_buffer_ext(
     if ((flags & DOBUF_NOPOPUP) && bt_popup(buf) && !bt_terminal(buf))
 	return OK;
 #endif
+    if ((action == DOBUF_GOTO || action == DOBUF_SPLIT)
+						  && (buf->b_flags & BF_DUMMY))
+    {
+	// disallow navigating to the dummy buffer
+	semsg(_(e_buffer_nr_does_not_exist), count);
+	return FAIL;
+    }
 
 #ifdef FEAT_GUI
     need_mouse_correct = TRUE;
@@ -4558,6 +4570,8 @@ build_stl_str_hl(
 #endif
 	if (vim_strchr(STL_ALL, *s) == NULL)
 	{
+	    if (*s == NUL)  // can happen with "%0"
+		break;
 	    s++;
 	    continue;
 	}
@@ -5292,6 +5306,10 @@ ex_buffer_all(exarg_T *eap)
 	all = FALSE;
     else
 	all = TRUE;
+
+    // Stop Visual mode, the cursor and "VIsual" may very well be invalid after
+    // switching to another buffer.
+    reset_VIsual_and_resel();
 
     setpcmark();
 
