@@ -3253,3 +3253,5 @@ EXTERN char e_cannot_use_s_backslash_in_vim9_script[]
 EXTERN char e_compiling_closure_without_context_str[]
 	INIT(= N_("E1271: compiling closure without context: %s"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
