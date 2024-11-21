@@ -2,6 +2,7 @@
 
 source shared.vim
 source check.vim
+source term_util.vim
 
 " Test for matchfuzzy()
 func Test_matchfuzzy()
@@ -243,6 +244,32 @@ func Test_matchfuzzy_limit()
   call assert_equal(['2', '2'], x->matchfuzzy('2', #{limit: 2}))
   call assert_equal(['2', '2'], x->matchfuzzy('2', #{limit: 3}))
   call assert_fails("call matchfuzzy(x, '2', #{limit: '2'})", 'E475:')
+endfunc
+
+" This was using uninitialized memory
+func Test_matchfuzzy_initialized()
+  CheckRunVimInTerminal
+
+  " This can take a very long time (esp. when using valgrind).  Run in a
+  " separate Vim instance and kill it after two seconds.  We only check for
+  " memory errors.
+  let lines =<< trim END
+      lvimgrep [ss [fg*
+  END
+  call writefile(lines, 'XTest_matchfuzzy', 'D')
+
+  let buf = RunVimInTerminal('-u NONE -X -Z', {})
+  call term_sendkeys(buf, ":source XTest_matchfuzzy\n")
+  call TermWait(buf, 2000)
+
+  let job = term_getjob(buf)
+  if job_status(job) == "run"
+    call job_stop(job, "int")
+    call TermWait(buf, 50)
+  endif
+
+  " clean up
+  call StopVimInTerminal(buf)
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
