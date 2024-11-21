@@ -281,3 +281,5 @@ EXTERN char e_missing_name_after_dot[]
 EXTERN char e_endblock_without_block[]
 	INIT(= N_("E1128: } without {"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
