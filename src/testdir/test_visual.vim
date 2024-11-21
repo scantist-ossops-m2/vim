@@ -999,5 +999,16 @@ func Test_heap_buffer_overflow()
   set updatecount&
 endfunc
 
+" this was leaving the end of the Visual area beyond the end of a line
+func Test_visual_ex_copy_line()
+  new
+  call setline(1, ["aaa", "bbbbbbbbbxbb"])
+  /x
+  exe "normal ggvjfxO"
+  t0
+  normal gNU
+  bwipe!
+endfunc
+
 
 " vim: shiftwidth=2 sts=2 expandtab
