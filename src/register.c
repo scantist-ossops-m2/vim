@@ -1246,6 +1246,8 @@ op_yank(oparg_T *oap, int deleting, int mess)
 				// double-count it.
 				bd.startspaces = (ce - cs + 1)
 							  - oap->start.coladd;
+				if (bd.startspaces < 0)
+				    bd.startspaces = 0;
 				startcol++;
 			    }
 			}
