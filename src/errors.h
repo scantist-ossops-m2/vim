@@ -293,3 +293,5 @@ EXTERN char e_cannot_extend_null_dict[]
 EXTERN char e_cannot_extend_null_list[]
 	INIT(= N_("E1134: Cannot extend a null list"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
