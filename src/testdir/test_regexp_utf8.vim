@@ -1,5 +1,7 @@
 " Tests for regexp in utf8 encoding
 
+source shared.vim
+
 func s:equivalence_test()
   let str = "AÀÁÂÃÄÅĀĂĄǍǞǠẢ BḂḆ CÇĆĈĊČ DĎĐḊḎḐ EÈÉÊËĒĔĖĘĚẺẼ FḞ GĜĞĠĢǤǦǴḠ HĤĦḢḦḨ IÌÍÎÏĨĪĬĮİǏỈ JĴ KĶǨḰḴ LĹĻĽĿŁḺ MḾṀ NÑŃŅŇṄṈ OÒÓÔÕÖØŌŎŐƠǑǪǬỎ PṔṖ Q RŔŖŘṘṞ SŚŜŞŠṠ TŢŤŦṪṮ UÙÚÛÜŨŪŬŮŰŲƯǓỦ VṼ WŴẀẂẄẆ XẊẌ YÝŶŸẎỲỶỸ ZŹŻŽƵẐẔ aàáâãäåāăąǎǟǡả bḃḇ cçćĉċč dďđḋḏḑ eèéêëēĕėęěẻẽ fḟ gĝğġģǥǧǵḡ hĥħḣḧḩẖ iìíîïĩīĭįǐỉ jĵǰ kķǩḱḵ lĺļľŀłḻ mḿṁ nñńņňŉṅṉ oòóôõöøōŏőơǒǫǭỏ pṕṗ q rŕŗřṙṟ sśŝşšṡ tţťŧṫṯẗ uùúûüũūŭůűųưǔủ vṽ wŵẁẃẅẇẘ xẋẍ yýÿŷẏẙỳỷỹ zźżžƶẑẕ"
   let groups = split(str)
@@ -563,6 +565,19 @@ func Test_match_invalid_byte()
   source Xinvalid
   bwipe!
   call delete('Xinvalid')
+endfunc
+
+func Test_match_illegal_byte()
+  let lines =<< trim END
+      silent! buffer ÿ\c
+      next ÿ
+      0scriptnames
+      source
+  END
+  call writefile(lines, 'Xregexp')
+  call system(GetVimCommand() .. ' -X -Z -e -s -S Xregexp -c qa!')
+
+  call delete('Xregexp')
 endfunc
 
 func Test_match_too_complicated()
