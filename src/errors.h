@@ -259,3 +259,5 @@ EXTERN char e_assert_fails_fifth_argument[]
 EXTERN char e_cannot_use_bang_with_nested_def[]
 	INIT(= N_("E1117: Cannot use ! with nested :def"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
