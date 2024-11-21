@@ -277,3 +277,5 @@ EXTERN char e_final_requires_a_value[]
 EXTERN char e_cannot_use_let_in_vim9_script[]
 	INIT(= N_("E1126: Cannot use :let in Vim9 script"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
