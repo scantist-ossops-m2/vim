@@ -931,4 +931,12 @@ func Test_regexp_last_subst_string()
   close!
 endfunc
 
+func Test_using_visual_position()
+  " this was using freed memory
+  new
+  exe "norm 0o\<Esc>\<C-V>k\<C-X>o0"
+  /\%V
+  bwipe!
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab
