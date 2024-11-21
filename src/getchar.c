@@ -3073,7 +3073,7 @@ check_end_reg_executing(int advance)
     static int
 vgetorpeek(int advance)
 {
-    int		c, c1;
+    int		c;
     int		timedout = FALSE;	// waited for more than 'timeoutlen'
 					// for mapping to complete or
 					// 'ttimeoutlen' for complete key code
@@ -3437,7 +3437,7 @@ vgetorpeek(int advance)
 		 * to the user with showcmd.
 		 */
 		showcmd_idx = 0;
-		c1 = 0;
+		int showing_partial = FALSE;
 		if (typebuf.tb_len > 0 && advance && !exmode_active)
 		{
 		    if (((State & (MODE_NORMAL | MODE_INSERT))
@@ -3452,7 +3452,7 @@ vgetorpeek(int advance)
 			    edit_putchar(typebuf.tb_buf[typebuf.tb_off
 						+ typebuf.tb_len - 1], FALSE);
 			    setcursor(); // put cursor back where it belongs
-			    c1 = 1;
+			    showing_partial = TRUE;
 			}
 			// need to use the col and row from above here
 			old_wcol = curwin->w_wcol;
@@ -3469,8 +3469,10 @@ vgetorpeek(int advance)
 			curwin->w_wrow = old_wrow;
 		    }
 
-		    // this looks nice when typing a dead character map
+		    // This looks nice when typing a dead character map.
+		    // There is no actual command line for get_number().
 		    if ((State & MODE_CMDLINE)
+			    && get_cmdline_info()->cmdbuff != NULL
 #if defined(FEAT_CRYPT) || defined(FEAT_EVAL)
 			    && cmdline_star == 0
 #endif
@@ -3479,7 +3481,7 @@ vgetorpeek(int advance)
 		    {
 			putcmdline(typebuf.tb_buf[typebuf.tb_off
 						+ typebuf.tb_len - 1], FALSE);
-			c1 = 1;
+			showing_partial = TRUE;
 		    }
 		}
 
@@ -3513,11 +3515,12 @@ vgetorpeek(int advance)
 
 		if (showcmd_idx != 0)
 		    pop_showcmd();
-		if (c1 == 1)
+		if (showing_partial)
 		{
 		    if (State & MODE_INSERT)
 			edit_unputchar();
-		    if (State & MODE_CMDLINE)
+		    if ((State & MODE_CMDLINE)
+					&& get_cmdline_info()->cmdbuff != NULL)
 			unputcmdline();
 		    else
 			setcursor();	// put cursor back where it belongs
