@@ -3240,3 +3240,5 @@ EXTERN char e_cannot_use_s_colon_in_vim9_script_str[]
 EXTERN char e_cannot_create_vim9_script_variable_in_function_str[]
 	INIT(= N_("E1269: Cannot create a Vim9 script variable in a function: %s"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
