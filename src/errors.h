@@ -3213,3 +3213,5 @@ EXTERN char e_using_autoload_in_script_not_under_autoload_directory[]
 EXTERN char e_autoload_import_cannot_use_absolute_or_relative_path[]
 	INIT(= N_("E1264: Autoload import cannot use absolute or relative path: %s"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
