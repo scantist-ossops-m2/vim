@@ -3263,3 +3263,5 @@ EXTERN char e_no_script_file_name_to_substitute_for_script[]
 EXTERN char e_string_or_function_required_for_arrow_parens_expr[]
 	INIT(= N_("E1275: String or function required for ->(expr)"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
