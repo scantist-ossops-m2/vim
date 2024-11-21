@@ -3285,3 +3285,5 @@ EXTERN char e_bitshift_ops_must_be_number[]
 EXTERN char e_bitshift_ops_must_be_postive[]
 	INIT(= N_("E1283: bitshift amount must be a positive number"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
