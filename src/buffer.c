@@ -462,7 +462,12 @@ can_unload_buffer(buf_T *buf)
 	    }
     }
     if (!can_unload)
-	semsg(_(e_attempt_to_delete_buffer_that_is_in_use_str), buf->b_fname);
+    {
+	char_u *fname = buf->b_fname != NULL ? buf->b_fname : buf->b_ffname;
+
+	semsg(_(e_attempt_to_delete_buffer_that_is_in_use_str),
+				fname != NULL ? fname : (char_u *)"[No Name]");
+    }
     return can_unload;
 }
 
@@ -1322,6 +1327,13 @@ do_buffer_ext(
        )
 	return OK;
 #endif
+    if ((action == DOBUF_GOTO || action == DOBUF_SPLIT)
+						  && (buf->b_flags & BF_DUMMY))
+    {
+	// disallow navigating to the dummy buffer
+	semsg(_(e_buffer_nr_does_not_exist), count);
+	return FAIL;
+    }
 
 #ifdef FEAT_GUI
     need_mouse_correct = TRUE;
@@ -1430,8 +1442,14 @@ do_buffer_ext(
 		buf = buflist_findnr(curwin->w_jumplist[jumpidx].fmark.fnum);
 		if (buf != NULL)
 		{
-		    if (buf == curbuf || !buf->b_p_bl)
-			buf = NULL;	// skip current and unlisted bufs
+		    // Skip current and unlisted bufs.  Also skip a quickfix
+		    // buffer, it might be deleted soon.
+		    if (buf == curbuf || !buf->b_p_bl
+#if defined(FEAT_QUICKFIX)
+			    || bt_quickfix(buf)
+#endif
+			    )
+			buf = NULL;
 		    else if (buf->b_ml.ml_mfp == NULL)
 		    {
 			// skip unloaded buf, but may keep it for later
@@ -1467,7 +1485,11 @@ do_buffer_ext(
 		    continue;
 		}
 		// in non-help buffer, try to skip help buffers, and vv
-		if (buf->b_help == curbuf->b_help && buf->b_p_bl)
+		if (buf->b_help == curbuf->b_help && buf->b_p_bl
+#if defined(FEAT_QUICKFIX)
+			    && !bt_quickfix(buf)
+#endif
+			   )
 		{
 		    if (buf->b_ml.ml_mfp != NULL)   // found loaded buffer
 			break;
@@ -1485,7 +1507,11 @@ do_buffer_ext(
 	if (buf == NULL)	// No loaded buffer, find listed one
 	{
 	    FOR_ALL_BUFFERS(buf)
-		if (buf->b_p_bl && buf != curbuf)
+		if (buf->b_p_bl && buf != curbuf
+#if defined(FEAT_QUICKFIX)
+			    && !bt_quickfix(buf)
+#endif
+		       )
 		    break;
 	}
 	if (buf == NULL)	// Still no buffer, just take one
@@ -1494,6 +1520,10 @@ do_buffer_ext(
 		buf = curbuf->b_next;
 	    else
 		buf = curbuf->b_prev;
+#if defined(FEAT_QUICKFIX)
+	    if (bt_quickfix(buf))
+		buf = NULL;
+#endif
 	}
     }
 
@@ -1706,6 +1736,7 @@ set_curbuf(buf_T *buf, int action)
 #endif
     bufref_T	newbufref;
     bufref_T	prevbufref;
+    int		valid;
 
     setpcmark();
     if ((cmdmod.cmod_flags & CMOD_KEEPALT) == 0)
@@ -1763,13 +1794,19 @@ set_curbuf(buf_T *buf, int action)
     // An autocommand may have deleted "buf", already entered it (e.g., when
     // it did ":bunload") or aborted the script processing.
     // If curwin->w_buffer is null, enter_buffer() will make it valid again
-    if ((buf_valid(buf) && buf != curbuf
+    valid = buf_valid(buf);
+    if ((valid && buf != curbuf
 #ifdef FEAT_EVAL
 		&& !aborting()
 #endif
 	) || curwin->w_buffer == NULL)
     {
-	enter_buffer(buf);
+	// If the buffer is not valid but curwin->w_buffer is NULL we must
+	// enter some buffer.  Using the last one is hopefully OK.
+	if (!valid)
+	    enter_buffer(lastbuf);
+	else
+	    enter_buffer(buf);
 #ifdef FEAT_SYN_HL
 	if (old_tw != curbuf->b_p_tw)
 	    check_colorcolumn(curwin);
@@ -2288,8 +2325,7 @@ free_buf_options(
     clear_string_option(&buf->b_p_vsts);
     vim_free(buf->b_p_vsts_nopaste);
     buf->b_p_vsts_nopaste = NULL;
-    vim_free(buf->b_p_vsts_array);
-    buf->b_p_vsts_array = NULL;
+    VIM_CLEAR(buf->b_p_vsts_array);
     clear_string_option(&buf->b_p_vts);
     VIM_CLEAR(buf->b_p_vts_array);
 #endif
@@ -4476,6 +4512,8 @@ build_stl_str_hl(
 #endif
 	if (vim_strchr(STL_ALL, *s) == NULL)
 	{
+	    if (*s == NUL)  // can happen with "%0"
+		break;
 	    s++;
 	    continue;
 	}
@@ -5213,6 +5251,10 @@ ex_buffer_all(exarg_T *eap)
 	all = FALSE;
     else
 	all = TRUE;
+
+    // Stop Visual mode, the cursor and "VIsual" may very well be invalid after
+    // switching to another buffer.
+    reset_VIsual_and_resel();
 
     setpcmark();
 
