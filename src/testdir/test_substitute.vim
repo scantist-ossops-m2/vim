@@ -1115,6 +1115,22 @@ func Test_sub_expr_goto_other_file()
   bwipe!
 endfunc
 
+func Test_recursive_expr_substitute()
+  " this was reading invalid memory
+  let lines =<< trim END
+      func Repl(g, n)
+        s
+        r%:s000
+      endfunc
+      next 0
+      let caught = 0
+      s/\%')/\=Repl(0, 0)
+      qall!
+  END
+  call writefile(lines, 'XexprSubst', 'D')
+  call RunVim([], [], '--clean -S XexprSubst')
+endfunc
+
 " Test for the 2-letter and 3-letter :substitute commands
 func Test_substitute_short_cmd()
   new
@@ -1396,6 +1412,20 @@ func Test_substitute_short_cmd()
   sIe
 
   bw!
+endfunc
+
+" Check handling expanding "~" resulting in extremely long text.
+func Test_substitute_tilde_too_long()
+  enew!
+
+  s/.*/ixxx
+  s//~~~~~~~~~AAAAAAA@(
+
+  " Either fails with "out of memory" or "text too long".
+  " This can take a long time.
+  call assert_fails('sil! norm &&&&&&&&&', ['E1240:\|E342:'])
+
+  bwipe!
 endfunc
 
 " This should be done last to reveal a memory leak when vim_regsub_both() is
