@@ -226,11 +226,11 @@ shift_line(
     int	amount,
     int call_changed_bytes)	// call changed_bytes()
 {
-    int		count;
+    long long	count;
     int		i, j;
     int		sw_val = (int)get_sw_value_indent(curbuf);
 
-    count = get_indent();	// get current indent
+    count = (long long)get_indent();	// get current indent
 
     if (round)			// round off indent
     {
@@ -257,14 +257,19 @@ shift_line(
 		count = 0;
 	}
 	else
-	    count += sw_val * amount;
+	{
+	    if ((long long)sw_val * (long long)amount > INT_MAX - count)
+		count = INT_MAX;
+	    else
+		count += (long long)sw_val * (long long)amount;
+	}
     }
 
     // Set new indent
     if (State & VREPLACE_FLAG)
-	change_indent(INDENT_SET, count, FALSE, NUL, call_changed_bytes);
+	change_indent(INDENT_SET, (int)count, FALSE, NUL, call_changed_bytes);
     else
-	(void)set_indent(count, call_changed_bytes ? SIN_CHANGED : 0);
+	(void)set_indent((int)count, call_changed_bytes ? SIN_CHANGED : 0);
 }
 
 /*
@@ -1173,6 +1178,8 @@ op_replace(oparg_T *oap, int c)
 
 	while (LTOREQ_POS(curwin->w_cursor, oap->end))
 	{
+	    int done = FALSE;
+
 	    n = gchar_cursor();
 	    if (n != NUL)
 	    {
@@ -1186,6 +1193,7 @@ op_replace(oparg_T *oap, int c)
 		    if (curwin->w_cursor.lnum == oap->end.lnum)
 			oap->end.col += new_byte_len - old_byte_len;
 		    replace_character(c);
+		    done = TRUE;
 		}
 		else
 		{
@@ -1204,10 +1212,15 @@ op_replace(oparg_T *oap, int c)
 			if (curwin->w_cursor.lnum == oap->end.lnum)
 			    getvpos(&oap->end, end_vcol);
 		    }
-		    PBYTE(curwin->w_cursor, c);
+		    // with "coladd" set may move to just after a TAB
+		    if (gchar_cursor() != NUL)
+		    {
+			PBYTE(curwin->w_cursor, c);
+			done = TRUE;
+		    }
 		}
 	    }
-	    else if (virtual_op && curwin->w_cursor.lnum == oap->end.lnum)
+	    if (!done && virtual_op && curwin->w_cursor.lnum == oap->end.lnum)
 	    {
 		int virtcols = oap->end.coladd;
 
@@ -2870,7 +2883,7 @@ do_addsub(
 	    for (bit = bits; bit > 0; bit--)
 		if ((n >> (bit - 1)) & 0x1) break;
 
-	    for (i = 0; bit > 0; bit--)
+	    for (i = 0; bit > 0 && i < (NUMBUFLEN - 1); bit--)
 		buf2[i++] = ((n >> (bit - 1)) & 0x1) ? '1' : '0';
 
 	    buf2[i] = '\0';

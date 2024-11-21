@@ -3314,3 +3314,5 @@ EXTERN char e_cmdline_window_already_open[]
 EXTERN char e_cannot_use_negative_id_after_adding_textprop_with_text[]
 	INIT(= N_("E1293: Cannot use a negative id after adding a textprop with text"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));

@@ -483,6 +483,18 @@ func Test_visual_block_put()
   bw!
 endfunc
 
+func Test_visual_block_put_invalid()
+  enew!
+  behave mswin
+  norm yy
+  norm v)Ps/^/	
+  " this was causing the column to become negative
+  silent norm ggv)P
+
+  bwipe!
+  behave xterm
+endfunc
+
 " Visual modes (v V CTRL-V) followed by an operator; count; repeating
 func Test_visual_mode_op()
   new
@@ -1479,6 +1491,27 @@ func Test_visual_area_adjusted_when_hiding()
   norm! zW
   bwipe!
   bwipe!
+endfunc
+
+
+" Check fix for the heap-based buffer overflow bug found in the function
+" utfc_ptr2len and reported at
+" https://huntr.dev/bounties/ae933869-a1ec-402a-bbea-d51764c6618e
+func Test_heap_buffer_overflow()
+  enew
+  set updatecount=0
+
+  norm R0
+  split other
+  norm R000
+  exe "norm \<C-V>l"
+  ball
+  call assert_equal(getpos("."), getpos("v"))
+  call assert_equal('n', mode())
+  norm zW
+
+  %bwipe!
+  set updatecount&
 endfunc
 
 
