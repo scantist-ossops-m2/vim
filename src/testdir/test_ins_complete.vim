@@ -2164,5 +2164,13 @@ func Test_ins_complete_add()
   bwipe!
 endfunc
 
+func Test_ins_complete_end_of_line()
+  " this was reading past the end of the line
+  new  
+  norm 8oý 
+  sil! norm o
+
+  bwipe!
+endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
