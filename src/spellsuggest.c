@@ -501,6 +501,10 @@ spell_suggest(int count)
 	    curwin->w_cursor.col = VIsual.col;
 	++badlen;
 	end_visual_mode();
+	// make sure we don't include the NUL at the end of the line
+	line = ml_get_curline();
+	if (badlen > STRLEN(line) - curwin->w_cursor.col)
+	    badlen = STRLEN(line) - curwin->w_cursor.col;
     }
     // Find the start of the badly spelled word.
     else if (spell_move_to(curwin, FORWARD, TRUE, TRUE, NULL) == 0
@@ -1953,7 +1957,8 @@ suggest_trie_walk(
 			    sp->ts_isdiff = (newscore != 0)
 						       ? DIFF_YES : DIFF_NONE;
 			}
-			else if (sp->ts_isdiff == DIFF_INSERT)
+			else if (sp->ts_isdiff == DIFF_INSERT
+							    && sp->ts_fidx > 0)
 			    // When inserting trail bytes don't advance in the
 			    // bad word.
 			    --sp->ts_fidx;
