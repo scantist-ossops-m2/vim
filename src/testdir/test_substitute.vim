@@ -1035,6 +1035,19 @@ func Test_sub_undo_change()
   delfunc Repl
 endfunc
 
+" This was editing a script file from the expression
+func Test_sub_edit_scriptfile()
+  new
+  norm o0000000000000000000000000000000000000000000000000000
+  func EditScript()
+    silent! scr! Xfile
+  endfunc
+  s/\%')/\=EditScript()
+
+  delfunc EditScript
+  bwipe!
+endfunc
+
 " Test for the 2-letter and 3-letter :substitute commands
 func Test_substitute_short_cmd()
   new
