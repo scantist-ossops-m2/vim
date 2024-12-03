@@ -3288,3 +3288,5 @@ EXTERN char e_bitshift_ops_must_be_postive[]
 EXTERN char e_argument_1_list_item_nr_dictionary_required[]
 	INIT(= N_("E1284: Argument 1, list item %d: Dictionary required"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
