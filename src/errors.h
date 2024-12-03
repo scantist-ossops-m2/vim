@@ -3212,3 +3212,5 @@ EXTERN char e_autoload_import_cannot_use_absolute_or_relative_path[]
 EXTERN char e_illegal_character_in_word[]
 	INIT(= N_("E1280: Illegal character in word"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
