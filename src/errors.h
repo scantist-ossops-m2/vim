@@ -3320,3 +3320,5 @@ EXTERN char e_can_only_use_text_align_when_column_is_zero[]
 EXTERN char e_cannot_specify_both_type_and_types[]
 	INIT(= N_("E1295: Cannot specify both 'type' and 'types'"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
