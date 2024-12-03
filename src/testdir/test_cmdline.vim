@@ -552,6 +552,17 @@ func Test_getcompletion()
   call assert_fails('call getcompletion("abc", [])', 'E475:')
 endfunc
 
+func Test_multibyte_expression()
+  " This was using uninitialized memory.
+  let lines =<< trim END
+      set verbose=6
+      norm @=Ù·
+      qall!
+  END
+  call writefile(lines, 'XmultiScript', 'D')
+  call RunVim('', '', '-u NONE -n -e -s -S XmultiScript')
+endfunc
+
 " Test for getcompletion() with "fuzzy" in 'wildoptions'
 func Test_getcompletion_wildoptions()
   let save_wildoptions = &wildoptions
@@ -751,6 +762,9 @@ func Test_cmdline_remove_char()
 
     call feedkeys(":abc def\<S-Left>\<C-U>\<C-B>\"\<CR>", 'tx')
     call assert_equal('"def', @:, e)
+
+    " This was going before the start in latin1.
+    call feedkeys(": \<C-W>\<CR>", 'tx')
   endfor
 
   let &encoding = encoding_save
@@ -781,6 +795,14 @@ func Test_illegal_address2()
   quit!
   bwipe!
   call delete('Xtest.vim')
+endfunc
+
+func Test_mark_from_line_zero()
+  " this was reading past the end of the first (empty) line
+  new
+  norm oxxxx
+  call assert_fails("0;'(", 'E20:')
+  bwipe!
 endfunc
 
 func Test_cmdline_complete_wildoptions()
@@ -3282,6 +3304,18 @@ func Test_cmdline_complete_scriptnames()
   bw!
   call delete('Xa1b2c3.vim')
   set wildmenu&
+endfunc
+
+func Test_recursive_register()
+  let @= = ''
+  silent! ?e/
+  let caught = 'no'
+  try
+    normal // 
+  catch /E169:/
+    let caught = 'yes'
+  endtry
+  call assert_equal('yes', caught)
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
