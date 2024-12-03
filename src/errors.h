@@ -3277,3 +3277,5 @@ EXTERN char e_missing_close_curly_str[]
 EXTERN char e_illegal_character_in_word[]
 	INIT(= N_("E1280: Illegal character in word"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
