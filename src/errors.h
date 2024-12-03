@@ -3263,3 +3263,7 @@ EXTERN char e_no_script_file_name_to_substitute_for_script[]
 EXTERN char e_string_or_function_required_for_arrow_parens_expr[]
 	INIT(= N_("E1275: String or function required for ->(expr)"));
 #endif
+#ifdef FEAT_SPELL
+EXTERN char e_illegal_character_in_word[]
+	INIT(= N_("E1280: Illegal character in word"));
+#endif
