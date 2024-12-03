@@ -1301,6 +1301,18 @@ func Test_visual_reselect_with_count()
   let lines =<< trim END
 
 
+func Test_visual_area_adjusted_when_hiding()
+  " The Visual area ended after the end of the line after :hide
+  call setline(1, 'xxx')
+  vsplit Xfile
+  call setline(1, 'xxxxxxxx')
+  norm! $o
+  hid
+  norm! zW
+  bwipe!
+  bwipe!
+endfunc
+
 
       :
       r<sfile>
