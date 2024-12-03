@@ -463,7 +463,12 @@ can_unload_buffer(buf_T *buf)
 	    }
     }
     if (!can_unload)
-	semsg(_(e_attempt_to_delete_buffer_that_is_in_use_str), buf->b_fname);
+    {
+	char_u *fname = buf->b_fname != NULL ? buf->b_fname : buf->b_ffname;
+
+	semsg(_(e_attempt_to_delete_buffer_that_is_in_use_str),
+				fname != NULL ? fname : (char_u *)"[No Name]");
+    }
     return can_unload;
 }
 
@@ -2947,7 +2952,7 @@ buflist_match(
 
     // First try the short file name, then the long file name.
     match = fname_match(rmp, buf->b_sfname, ignore_case);
-    if (match == NULL)
+    if (match == NULL && rmp->regprog != NULL)
 	match = fname_match(rmp, buf->b_ffname, ignore_case);
 
     return match;
@@ -2972,7 +2977,7 @@ fname_match(
 	rmp->rm_ic = p_fic || ignore_case;
 	if (vim_regexec(rmp, name, (colnr_T)0))
 	    match = name;
-	else
+	else if (rmp->regprog != NULL)
 	{
 	    // Replace $(HOME) with '~' and try matching again.
 	    p = home_replace_save(NULL, name);
@@ -4578,6 +4583,8 @@ build_stl_str_hl(
 #endif
 	if (vim_strchr(STL_ALL, *s) == NULL)
 	{
+	    if (*s == NUL)  // can happen with "%0"
+		break;
 	    s++;
 	    continue;
 	}
