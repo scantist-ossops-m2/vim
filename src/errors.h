@@ -3240,3 +3240,7 @@ EXTERN char e_cannot_use_s_colon_in_vim9_script_str[]
 EXTERN char e_cannot_create_vim9_script_variable_in_function_str[]
 	INIT(= N_("E1269: Cannot create a Vim9 script variable in a function: %s"));
 #endif
+#ifdef FEAT_SPELL
+EXTERN char e_illegal_character_in_word[]
+	INIT(= N_("E1280: Illegal character in word"));
+#endif
