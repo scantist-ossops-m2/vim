@@ -574,6 +574,17 @@ func Test_getcompletion()
   call assert_fails('call getcompletion("abc", [])', 'E475:')
 endfunc
 
+func Test_multibyte_expression()
+  " This was using uninitialized memory.
+  let lines =<< trim END
+      set verbose=6
+      norm @=Ù·
+      qall!
+  END
+  call writefile(lines, 'XmultiScript', 'D')
+  call RunVim('', '', '-u NONE -n -e -s -S XmultiScript')
+endfunc
+
 " Test for getcompletion() with "fuzzy" in 'wildoptions'
 func Test_getcompletion_wildoptions()
   let save_wildoptions = &wildoptions
@@ -3390,6 +3401,18 @@ endfunc
 
 func Test_screenpos_and_completion()
   call feedkeys(":let a\<C-R>=Check_completion()\<CR>\<Esc>", "xt")
+endfunc
+
+func Test_recursive_register()
+  let @= = ''
+  silent! ?e/
+  let caught = 'no'
+  try
+    normal // 
+  catch /E169:/
+    let caught = 'yes'
+  endtry
+  call assert_equal('yes', caught)
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab

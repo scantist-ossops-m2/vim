@@ -70,6 +70,16 @@ func Test_z_equal_on_invalid_utf8_word()
   bwipe!
 endfunc
 
+func Test_z_equal_on_single_character()
+  " this was decrementing the index below zero
+  new
+  norm a0\ÃŠ
+  norm zW
+  norm z=
+
+  bwipe!
+endfunc
+
 " Test spellbadword() with argument
 func Test_spellbadword()
   set spell
@@ -141,6 +151,19 @@ func Test_spell_file_missing()
   unlet s:spell_file_missing
   set spell& spelllang&
   %bwipe!
+endfunc
+
+func Test_spell_file_missing_bwipe()
+  " this was using a window that was wiped out in a SpellFileMissing autocmd
+  set spelllang=xy
+  au SpellFileMissing * n0
+  set spell
+  au SpellFileMissing * bw
+  snext somefile
+
+  au! SpellFileMissing
+  bwipe!
+  set nospell spelllang=en
 endfunc
 
 func Test_spelldump()
@@ -233,6 +256,18 @@ func Test_spellreall()
   call assert_fails('spellrepall', 'E753:')
   set spell&
   bwipe!
+endfunc
+
+func Test_spell_dump_word_length()
+  " this was running over MAXWLEN
+  new
+  noremap 0 0a0zW0000000
+  sil! norm 0z=0
+  sil norm 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  sil! norm 0z=0
+
+  bwipe!
+  nunmap 0
 endfunc
 
 " Test spellsuggest({word} [, {max} [, {capital}]])
@@ -804,6 +839,21 @@ func Test_spellsuggest_too_deep()
   norm s000G00ý000000000000
   sil norm ..vzG................vvzG0     v z=
   bwipe!
+endfunc
+
+func Test_spell_good_word_invalid()
+  " This was adding a word with a 0x02 byte, which causes havoc.
+  enew
+  norm o0
+  sil! norm rzzWs00/
+  2
+  sil! norm VzGprzzW
+  sil! norm z=
+
+  bwipe!
+  " clear the internal word list
+  set enc=latin1
+  set enc=utf-8
 endfunc
 
 func LoadAffAndDic(aff_contents, dic_contents)
