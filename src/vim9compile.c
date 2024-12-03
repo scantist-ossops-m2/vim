@@ -9484,7 +9484,8 @@ compile_def_function(
 	cmd = ea.cmd;
 	if (!(local_cmdmod.cmod_flags & CMOD_LEGACY)
 		&& (starts_with_colon || !(*cmd == '\''
-		       || (cmd[0] == cmd[1] && (*cmd == '+' || *cmd == '-')))))
+		       || (cmd[0] != NUL && cmd[0] == cmd[1]
+					    && (*cmd == '+' || *cmd == '-')))))
 	{
 	    ea.cmd = skip_range(ea.cmd, TRUE, NULL);
 	    if (ea.cmd > cmd)
