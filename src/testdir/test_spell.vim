@@ -153,6 +153,19 @@ func Test_spell_file_missing()
   %bwipe!
 endfunc
 
+func Test_spell_file_missing_bwipe()
+  " this was using a window that was wiped out in a SpellFileMissing autocmd
+  set spelllang=xy
+  au SpellFileMissing * n0
+  set spell
+  au SpellFileMissing * bw
+  snext somefile
+
+  au! SpellFileMissing
+  bwipe!
+  set nospell spelllang=en
+endfunc
+
 func Test_spelldump()
   set spell spelllang=en
   spellrare! emacs
