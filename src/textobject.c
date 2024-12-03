@@ -1664,7 +1664,11 @@ find_next_quote(
 	if (c == NUL)
 	    return -1;
 	else if (escape != NULL && vim_strchr(escape, c))
+	{
 	    ++col;
+	    if (line[col] == NUL)
+		return -1;
+	}
 	else if (c == quotechar)
 	    break;
 	if (has_mbyte)
@@ -1792,11 +1796,17 @@ current_quote(
 
 	// Find out if we have a quote in the selection.
 	while (i <= col_end)
+	{
+	    // check for going over the end of the line, which can happen if
+	    // the line was changed after the Visual area was selected.
+	    if (line[i] == NUL)
+		break;
 	    if (line[i++] == quotechar)
 	    {
 		selected_quote = TRUE;
 		break;
 	    }
+	}
     }
 
     if (!vis_empty && line[col_start] == quotechar)

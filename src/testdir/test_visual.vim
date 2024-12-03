@@ -1265,6 +1265,14 @@ func Test_visual_block_with_virtualedit()
   call delete('XTest_block')
 endfunc
 
+func Test_visual_block_ctrl_w_f()
+  " Emtpy block selected in new buffer should not result in an error.
+  au! BufNew foo sil norm f
+  edit foo
+
+  au! BufNew
+endfunc
+
 func Test_visual_reselect_with_count()
   " this was causing an illegal memory access
   let lines =<< trim END
@@ -1283,6 +1291,18 @@ func Test_visual_reselect_with_count()
 
   bwipe!
   call delete('XvisualReselect')
+endfunc
+
+func Test_visual_area_adjusted_when_hiding()
+  " The Visual area ended after the end of the line after :hide
+  call setline(1, 'xxx')
+  vsplit Xfile
+  call setline(1, 'xxxxxxxx')
+  norm! $o
+  hid
+  norm! zW
+  bwipe!
+  bwipe!
 endfunc
 
 
