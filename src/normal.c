@@ -184,6 +184,42 @@ find_command(int cmdchar)
 }
 
 /*
+ * If currently editing a cmdline or text is locked: beep and give an error
+ * message, return TRUE.
+ */
+    static int
+check_text_locked(oparg_T *oap)
+{
+    if (text_locked())
+    {
+	if (oap != NULL)
+	    clearopbeep(oap);
+	text_locked_msg();
+	return TRUE;
+    }
+    return FALSE;
+}
+
+/*
+ * If text is locked, "curbuf_lock" or "allbuf_lock" is set:
+ * Give an error message, possibly beep and return TRUE.
+ * "oap" may be NULL.
+ */
+    int
+check_text_or_curbuf_locked(oparg_T *oap)
+{
+    if (check_text_locked(oap))
+	return TRUE;
+    if (curbuf_locked())
+    {
+	if (oap != NULL)
+	    clearop(oap);
+	return TRUE;
+    }
+    return FALSE;
+}
+
+/*
  * Handle the count before a normal command and set cap->count0.
  */
     static int
@@ -802,14 +838,8 @@ normal_cmd(
 	goto normal_end;
     }
 
-    if (text_locked() && (nv_cmds[idx].cmd_flags & NV_NCW))
-    {
-	// This command is not allowed while editing a cmdline: beep.
-	clearopbeep(oap);
-	text_locked_msg();
-	goto normal_end;
-    }
-    if ((nv_cmds[idx].cmd_flags & NV_NCW) && curbuf_locked())
+    if ((nv_cmds[idx].cmd_flags & NV_NCW) && check_text_or_curbuf_locked(oap))
+	// this command is not allowed now
 	goto normal_end;
 
     // In Visual/Select mode, a few keys are handled in a special way.
@@ -4049,17 +4079,9 @@ nv_gotofile(cmdarg_T *cap)
     char_u	*ptr;
     linenr_T	lnum = -1;
 
-    if (text_locked())
-    {
-	clearopbeep(cap->oap);
-	text_locked_msg();
+    if (check_text_or_curbuf_locked(cap->oap))
 	return;
-    }
-    if (curbuf_locked())
-    {
-	clearop(cap->oap);
-	return;
-    }
+
 #ifdef FEAT_PROP_POPUP
     if (ERROR_IF_TERM_POPUP_WINDOW)
 	return;
@@ -4457,6 +4479,11 @@ nv_brackets(cmdarg_T *cap)
 	    clearop(cap->oap);
 	else
 	{
+	    // Make a copy, if the line was changed it will be freed.
+	    ptr = vim_strnsave(ptr, len);
+	    if (ptr == NULL)
+		return;
+
 	    find_pattern_in_path(ptr, 0, len, TRUE,
 		cap->count0 == 0 ? !isupper(cap->nchar) : FALSE,
 		((cap->nchar & 0xf) == ('d' & 0xf)) ?  FIND_DEFINE : FIND_ANY,
@@ -4465,6 +4492,7 @@ nv_brackets(cmdarg_T *cap)
 			    islower(cap->nchar) ? ACTION_SHOW : ACTION_GOTO,
 		cap->cmdchar == ']' ? curwin->w_cursor.lnum + 1 : (linenr_T)1,
 		(linenr_T)MAXLNUM);
+	    vim_free(ptr);
 	    curwin->w_set_curswant = TRUE;
 	}
     }
@@ -6182,14 +6210,7 @@ nv_g_cmd(cmdarg_T *cap)
 
     // "gQ": improved Ex mode
     case 'Q':
-	if (text_locked())
-	{
-	    clearopbeep(cap->oap);
-	    text_locked_msg();
-	    break;
-	}
-
-	if (!checkclearopq(oap))
+	if (!check_text_locked(cap->oap) && !checkclearopq(oap))
 	    do_exmode(TRUE);
 	break;
 
