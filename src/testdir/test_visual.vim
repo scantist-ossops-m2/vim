@@ -1242,6 +1242,13 @@ func Test_visual_put_blockedit_zy_and_zp()
   bw!
 endfunc
 
+func Test_visual_block_yank_zy()
+  new
+  " this was reading before the start of the line
+  exe "norm o\<C-T>\<Esc>\<C-V>zy"
+  bwipe!
+endfunc
+
 func Test_visual_block_with_virtualedit()
   CheckScreendump
 
@@ -1263,6 +1270,44 @@ func Test_visual_block_with_virtualedit()
   call term_sendkeys(buf, "\<Esc>")
   call StopVimInTerminal(buf)
   call delete('XTest_block')
+endfunc
+
+" this was leaving the end of the Visual area beyond the end of a line
+func Test_visual_ex_copy_line()
+  new
+  call setline(1, ["aaa", "bbbbbbbbbxbb"])
+  /x
+  exe "normal ggvjfxO"
+  t0
+  normal gNU
+  bwipe!
+endfunc
+
+" This was leaving the end of the Visual area beyond the end of a line.
+" Set 'undolevels' to start a new undo block.
+func Test_visual_undo_deletes_last_line()
+  new
+  call setline(1, ["aaa", "ccc", "dyd"])
+  set undolevels=100
+  exe "normal obbbbbbbbbxbb\<Esc>"
+  set undolevels=100
+  /y
+  exe "normal ggvjfxO"
+  undo
+  normal gNU
+  bwipe!
+endfunc
+
+func Test_visual_area_adjusted_when_hiding()
+  " The Visual area ended after the end of the line after :hide
+  call setline(1, 'xxx')
+  vsplit Xfile
+  call setline(1, 'xxxxxxxx')
+  norm! $o
+  hid
+  norm! zW
+  bwipe!
+  bwipe!
 endfunc
 
 
