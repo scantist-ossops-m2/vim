@@ -1250,6 +1250,8 @@ op_yank(oparg_T *oap, int deleting, int mess)
 				// double-count it.
 				bd.startspaces = (ce - cs + 1)
 							  - oap->start.coladd;
+				if (bd.startspaces < 0)
+				    bd.startspaces = 0;
 				startcol++;
 			    }
 			}
@@ -1478,7 +1480,7 @@ yank_copy_line(struct block_def *bd, long y_idx, int exclude_trailing_space)
     {
 	int s = bd->textlen + bd->endspaces;
 
-	while (VIM_ISWHITE(*(bd->textstart + s - 1)) && s > 0)
+	while (s > 0 && VIM_ISWHITE(*(bd->textstart + s - 1)))
 	{
 	    s = s - (*mb_head_off)(bd->textstart, bd->textstart + s - 1) - 1;
 	    pnew--;
@@ -1915,7 +1917,7 @@ do_put(
 		ptr += yanklen;
 
 		// insert block's trailing spaces only if there's text behind
-		if ((j < count - 1 || !shortline) && spaces)
+		if ((j < count - 1 || !shortline) && spaces > 0)
 		{
 		    vim_memset(ptr, ' ', (size_t)spaces);
 		    ptr += spaces;
@@ -2248,6 +2250,15 @@ error:
 
     msgmore(nr_lines);
     curwin->w_set_curswant = TRUE;
+
+    // Make sure the cursor is not after the NUL.
+    int len = (int)STRLEN(ml_get_curline());
+    if (curwin->w_cursor.col > len)
+    {
+	if (cur_ve_flags == VE_ALL)
+	    curwin->w_cursor.coladd = curwin->w_cursor.col - len;
+	curwin->w_cursor.col = len;
+    }
 
 end:
     if (cmdmod.cmod_flags & CMOD_LOCKMARKS)
