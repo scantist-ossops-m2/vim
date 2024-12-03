@@ -269,7 +269,7 @@ eval_expr_typval(typval_T *expr, typval_T *argv, int argc, typval_T *rettv)
 	    if (fc == NULL)
 		return FAIL;
 
-	    // Shortcut to call a compiled function without overhead.
+	    // Shortcut to call a compiled function with minimal overhead.
 	    r = call_def_function(partial->pt_func, argc, argv,
 					  DEF_USE_PT_ARGV, partial, fc, rettv);
 	    remove_funccal();
@@ -2310,7 +2310,7 @@ eval_next_non_blank(char_u *arg, evalarg_T *evalarg, int *getnext)
 
 	if (next != NULL)
 	{
-	    *getnext = TRUE;
+	    *getnext = *p != NL;
 	    return skipwhite(next);
 	}
     }
@@ -7003,6 +7003,11 @@ do_string_sub(
 	     * - The text after the match.
 	     */
 	    sublen = vim_regsub(&regmatch, sub, expr, tail, 0, REGSUB_MAGIC);
+	    if (sublen <= 0)
+	    {
+		ga_clear(&ga);
+		break;
+	    }
 	    if (ga_grow(&ga, (int)((end - tail) + sublen -
 			    (regmatch.endp[0] - regmatch.startp[0]))) == FAIL)
 	    {
