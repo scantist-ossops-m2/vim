@@ -955,6 +955,7 @@ func Test_locationlist_curwin_was_closed()
   call assert_fails('lrewind', 'E924:')
 
   augroup! testgroup
+  delfunc R
 endfunc
 
 func Test_locationlist_cross_tab_jump()
@@ -5603,5 +5604,21 @@ func Test_win_gettype()
   call assert_equal("loclist", win_gettype(wid))
   lclose
 endfunc
+
+" Weird sequence of commands that caused entering a wiped-out buffer
+func Test_lopen_bwipe()
+  func R()
+    silent! tab lopen
+    e x
+    silent! lfile
+  endfunc
+
+  cal R()
+  cal R()
+  cal R()
+  bw!
+  delfunc R
+endfunc
+
 
 " vim: shiftwidth=2 sts=2 expandtab
