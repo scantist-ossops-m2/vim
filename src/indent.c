@@ -1924,6 +1924,8 @@ get_lisp_indent(void)
 			    }
 			}
 		    }
+		    if (*that == NUL)
+			break;
 		}
 		if (*that == '(' || *that == '[')
 		    ++parencount;
