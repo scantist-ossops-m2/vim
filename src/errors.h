@@ -3208,3 +3208,7 @@ EXTERN char e_using_autoload_in_script_not_under_autoload_directory[]
 EXTERN char e_autoload_import_cannot_use_absolute_or_relative_path[]
 	INIT(= N_("E1264: Autoload import cannot use absolute or relative path: %s"));
 #endif
+#ifdef FEAT_SPELL
+EXTERN char e_illegal_character_in_word[]
+	INIT(= N_("E1280: Illegal character in word"));
+#endif
