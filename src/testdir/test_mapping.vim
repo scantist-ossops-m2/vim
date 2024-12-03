@@ -1432,4 +1432,14 @@ func Test_abbreviate_latin1_encoding()
   set encoding=utf-8
 endfunc
 
+func Test_using_past_typeahead()
+  nnoremap :00 0
+  exe "norm :set \x80\xfb0=0\<CR>"
+  exe "sil norm :0\x0f\<C-U>\<CR>"
+
+  exe "norm :set \x80\xfb0=\<CR>"
+  nunmap :00
+endfunc
+
+
 " vim: shiftwidth=2 sts=2 expandtab
