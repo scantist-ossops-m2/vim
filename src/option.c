@@ -2449,9 +2449,9 @@ didset_options2(void)
 #endif
 #ifdef FEAT_VARTABS
     vim_free(curbuf->b_p_vsts_array);
-    tabstop_set(curbuf->b_p_vsts, &curbuf->b_p_vsts_array);
+    (void)tabstop_set(curbuf->b_p_vsts, &curbuf->b_p_vsts_array);
     vim_free(curbuf->b_p_vts_array);
-    tabstop_set(curbuf->b_p_vts,  &curbuf->b_p_vts_array);
+    (void)tabstop_set(curbuf->b_p_vts,  &curbuf->b_p_vts_array);
 #endif
 }
 
@@ -3742,6 +3742,11 @@ set_num_option(
     if (curbuf->b_p_ts <= 0)
     {
 	errmsg = e_positive;
+	curbuf->b_p_ts = 8;
+    }
+    else if (curbuf->b_p_ts > TABSTOP_MAX)
+    {
+	errmsg = e_invalid_argument;
 	curbuf->b_p_ts = 8;
     }
     if (p_tm < 0)
@@ -5943,9 +5948,9 @@ buf_copy_options(buf_T *buf, int flags)
 	    buf->b_p_vsts = vim_strsave(p_vsts);
 	    COPY_OPT_SCTX(buf, BV_VSTS);
 	    if (p_vsts && p_vsts != empty_option)
-		tabstop_set(p_vsts, &buf->b_p_vsts_array);
+		(void)tabstop_set(p_vsts, &buf->b_p_vsts_array);
 	    else
-		buf->b_p_vsts_array = 0;
+		buf->b_p_vsts_array = NULL;
 	    buf->b_p_vsts_nopaste = p_vsts_nopaste
 				 ? vim_strsave(p_vsts_nopaste) : NULL;
 #endif
@@ -6105,7 +6110,7 @@ buf_copy_options(buf_T *buf, int flags)
 		buf->b_p_isk = save_p_isk;
 #ifdef FEAT_VARTABS
 		if (p_vts && p_vts != empty_option && !buf->b_p_vts_array)
-		    tabstop_set(p_vts, &buf->b_p_vts_array);
+		    (void)tabstop_set(p_vts, &buf->b_p_vts_array);
 		else
 		    buf->b_p_vts_array = NULL;
 #endif
@@ -6120,7 +6125,7 @@ buf_copy_options(buf_T *buf, int flags)
 		buf->b_p_vts = vim_strsave(p_vts);
 		COPY_OPT_SCTX(buf, BV_VTS);
 		if (p_vts && p_vts != empty_option && !buf->b_p_vts_array)
-		    tabstop_set(p_vts, &buf->b_p_vts_array);
+		    (void)tabstop_set(p_vts, &buf->b_p_vts_array);
 		else
 		    buf->b_p_vts_array = NULL;
 #endif
@@ -6765,9 +6770,7 @@ paste_option_changed(void)
 	    if (buf->b_p_vsts)
 		free_string_option(buf->b_p_vsts);
 	    buf->b_p_vsts = empty_option;
-	    if (buf->b_p_vsts_array)
-		vim_free(buf->b_p_vsts_array);
-	    buf->b_p_vsts_array = 0;
+	    VIM_CLEAR(buf->b_p_vsts_array);
 #endif
 	}
 
@@ -6813,12 +6816,11 @@ paste_option_changed(void)
 		free_string_option(buf->b_p_vsts);
 	    buf->b_p_vsts = buf->b_p_vsts_nopaste
 			 ? vim_strsave(buf->b_p_vsts_nopaste) : empty_option;
-	    if (buf->b_p_vsts_array)
-		vim_free(buf->b_p_vsts_array);
+	    vim_free(buf->b_p_vsts_array);
 	    if (buf->b_p_vsts && buf->b_p_vsts != empty_option)
-		tabstop_set(buf->b_p_vsts, &buf->b_p_vsts_array);
+		(void)tabstop_set(buf->b_p_vsts, &buf->b_p_vsts_array);
 	    else
-		buf->b_p_vsts_array = 0;
+		buf->b_p_vsts_array = NULL;
 #endif
 	}
 
