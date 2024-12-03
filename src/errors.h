@@ -3255,3 +3255,7 @@ EXTERN char e_compiling_closure_without_context_str[]
 EXTERN char e_using_type_not_in_script_context_str[]
 	INIT(= N_("E1272: Using type not in a script context: %s"));
 #endif
+#ifdef FEAT_SPELL
+EXTERN char e_illegal_character_in_word[]
+	INIT(= N_("E1280: Illegal character in word"));
+#endif
