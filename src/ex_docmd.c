@@ -1070,7 +1070,7 @@ do_cmdline(
 
 		    // Check for the next breakpoint at or after the ":while"
 		    // or ":for".
-		    if (breakpoint != NULL)
+		    if (breakpoint != NULL && lines_ga.ga_len > current_line)
 		    {
 			*breakpoint = dbg_find_breakpoint(
 			       getline_equal(fgetline, cookie, getsourceline),
@@ -7124,9 +7124,10 @@ do_exedit(
 #endif
 	    )
     {
-	// Can't edit another file when "curbuf_lock" is set.  Only ":edit"
-	// can bring us here, others are stopped earlier.
-	if (*eap->arg != NUL && curbuf_locked())
+	// Can't edit another file when "textlock" or "curbuf_lock" is set.
+	// Only ":edit" or ":script" can bring us here, others are stopped
+	// earlier.
+	if (*eap->arg != NUL && text_or_buf_locked())
 	    return;
 
 	n = readonlymode;
