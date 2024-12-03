@@ -1310,9 +1310,9 @@ reg_match_visual(void)
     if (lnum < top.lnum || lnum > bot.lnum)
 	return FALSE;
 
+    col = (colnr_T)(rex.input - rex.line);
     if (mode == 'v')
     {
-	col = (colnr_T)(rex.input - rex.line);
 	if ((lnum == top.lnum && col < top.col)
 		|| (lnum == bot.lnum && col >= bot.col + (*p_sel != 'e')))
 	    return FALSE;
@@ -1327,7 +1327,12 @@ reg_match_visual(void)
 	    end = end2;
 	if (top.col == MAXCOL || bot.col == MAXCOL || curswant == MAXCOL)
 	    end = MAXCOL;
-	cols = win_linetabsize(wp, rex.line, (colnr_T)(rex.input - rex.line));
+
+	// getvvcol() flushes rex.line, need to get it again
+	rex.line = reg_getline(rex.lnum);
+	rex.input = rex.line + col;
+
+	cols = win_linetabsize(wp, rex.line, col);
 	if (cols < start || cols > end - (*p_sel == 'e'))
 	    return FALSE;
     }
@@ -1790,11 +1795,11 @@ regtilde(char_u *source, int magic)
 	}
     }
 
+    // Store a copy of newsub  in reg_prev_sub.  It is always allocated,
+    // because recursive calls may make the returned string invalid.
     vim_free(reg_prev_sub);
-    if (newsub != source)	// newsub was allocated, just keep it
-	reg_prev_sub = newsub;
-    else			// no ~ found, need to save newsub
-	reg_prev_sub = vim_strsave(newsub);
+    reg_prev_sub = vim_strsave(newsub);
+
     return newsub;
 }
 
