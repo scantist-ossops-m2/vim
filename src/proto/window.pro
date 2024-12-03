@@ -1,4 +1,5 @@
 /* window.c */
+win_T *prevwin_curwin(void);
 void do_window(int nchar, long Prenum, int xchar);
 void get_wincmd_addr_type(char_u *arg, exarg_T *eap);
 int win_split(int size, int flags);
@@ -74,6 +75,7 @@ int tabline_height(void);
 int min_rows(void);
 int only_one_window(void);
 void check_lnums(int do_curwin);
+void check_lnums_nested(int do_curwin);
 void reset_lnums(void);
 void make_snapshot(int idx);
 void restore_snapshot(int idx, int close_curwin);
