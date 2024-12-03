@@ -1,6 +1,7 @@
 " Tests for various eval things.
 
 source view_util.vim
+source shared.vim
 
 function s:foo() abort
   try
@@ -73,6 +74,30 @@ func Test_for_invalid()
     /1/5/2/s/\n
   endif
   redraw
+endfunc
+
+func Test_for_over_null_string()
+  let save_enc = &enc
+  set enc=iso8859
+  let cnt = 0
+  for c in test_null_string()
+    let cnt += 1
+  endfor
+  call assert_equal(0, cnt)
+
+  let &enc = save_enc
+endfunc
+
+func Test_for_invalid_line_count()
+  let lines =<< trim END
+      111111111111111111111111 for line in ['one']
+      endfor
+  END
+  call writefile(lines, 'XinvalidFor')
+  " only test that this doesn't crash
+  call RunVim([], [], '-u NONE -e -s -S XinvalidFor -c qa')
+
+  call delete('XinvalidFor')
 endfunc
 
 func Test_readfile_binary()
@@ -588,6 +613,11 @@ func Test_curly_assignment()
   unlet s:svar
   unlet s:gvar
   unlet g:gvar
+endfunc
+
+func Test_deep_recursion()
+  " this was running out of stack
+  call assert_fails("exe 'if ' .. repeat('(', 1002)", 'E1169: Expression too recursive: ((')
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
