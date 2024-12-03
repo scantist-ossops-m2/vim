@@ -3222,3 +3222,7 @@ EXTERN char e_autoload_import_cannot_use_absolute_or_relative_path[]
 EXTERN char e_cannot_use_partial_here[]
 	INIT(= N_("E1265: Cannot use a partial here"));
 #endif
+#ifdef FEAT_SPELL
+EXTERN char e_illegal_character_in_word[]
+	INIT(= N_("E1280: Illegal character in word"));
+#endif
