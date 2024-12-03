@@ -3232,3 +3232,9 @@ EXTERN char e_critical_error_in_python3_initialization_check_your_installation[]
 EXTERN char e_function_name_must_start_with_capital_str[]
 	INIT(= N_("E1267: Function name must start with a capital: %s"));
 #endif
+#ifdef FEAT_SPELL
+EXTERN char e_illegal_character_in_word[]
+	INIT(= N_("E1280: Illegal character in word"));
+#endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
