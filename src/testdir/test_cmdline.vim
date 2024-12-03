@@ -574,6 +574,17 @@ func Test_getcompletion()
   call assert_fails('call getcompletion("abc", [])', 'E475:')
 endfunc
 
+func Test_multibyte_expression()
+  " This was using uninitialized memory.
+  let lines =<< trim END
+      set verbose=6
+      norm @=Ù·
+      qall!
+  END
+  call writefile(lines, 'XmultiScript', 'D')
+  call RunVim('', '', '-u NONE -n -e -s -S XmultiScript')
+endfunc
+
 " Test for getcompletion() with "fuzzy" in 'wildoptions'
 func Test_getcompletion_wildoptions()
   let save_wildoptions = &wildoptions
@@ -2101,6 +2112,14 @@ func Test_cmdwin_insert_mode_close()
   exe "normal q:a\<C-C>let s='Hello'\<CR>"
   call assert_equal('Hello', s)
   call assert_equal(1, winnr('$'))
+endfunc
+
+func Test_cmdwin_ex_mode_with_modifier()
+  " this was accessing memory after allocated text in Ex mode
+  new
+  call setline(1, ['some', 'text', 'lines'])
+  silent! call feedkeys("gQnormal vq:atopleft\<C-V>\<CR>\<CR>", 'xt')
+  bwipe!
 endfunc
 
 " test that ";" works to find a match at the start of the first line
