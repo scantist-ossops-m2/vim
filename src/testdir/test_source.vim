@@ -646,4 +646,24 @@ func Test_source_buffer_vim9()
   %bw!
 endfunc
 
+func Test_source_buffer_long_line()
+  " This was reading past the end of the line.
+  new
+  norm300gr0
+  so
+  bwipe!
+
+  let lines =<< trim END
+      new
+      norm 10a0000000000Ã¸00000000000
+      norm i0000000000000000000
+      silent! so
+  END
+  call writefile(lines, 'Xtest.vim')
+  source Xtest.vim
+  bwipe!
+  call delete('Xtest.vim')
+endfunc
+
+
 " vim: shiftwidth=2 sts=2 expandtab
