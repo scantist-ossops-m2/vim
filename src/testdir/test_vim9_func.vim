@@ -1498,6 +1498,44 @@ def Test_error_in_nested_function()
   assert_fails('FuncWithForwardCall()', 'E1096:', '', 1, 'FuncWithForwardCall')
 enddef
 
+def Test_nested_function_with_nextcmd()
+  var lines =<< trim END
+      vim9script
+      # Define an outer function
+      def FirstFunction()
+        # Define an inner function
+        def SecondFunction()
+          # the function has a body, a double free is detected.
+          AAAAA
+
+         # enddef followed by | or } followed by # one or more characters
+         enddef|BBBB
+      enddef
+
+      # Compile all functions
+      defcompile
+  END
+  CheckScriptFailure(lines, 'E476: Invalid command: AAAAA')
+enddef
+
+def Test_nested_function_with_args_split()
+  var lines =<< trim END
+      vim9script
+      def FirstFunction()
+        def SecondFunction(
+        )
+        # had a double free if the right parenthesis of the nested function is
+        # on the next line
+         
+        enddef|BBBB
+      enddef
+      # Compile all functions
+      defcompile
+  END
+  # FIXME: this should fail on the BBBB
+  CheckScriptSuccess(lines)
+enddef
+
 def Test_return_type_wrong()
   CheckScriptFailure([
         'def Func(): number',
@@ -3202,6 +3240,17 @@ def Test_numbered_function_reference()
   # check that the function still exists
   assert_equal(output, execute('legacy func g:mydict.afunc'))
   unlet g:mydict
+enddef
+
+def Test_go_beyond_end_of_cmd()
+  # this was reading the byte after the end of the line
+  var lines =<< trim END
+    def F()
+      cal
+    enddef
+    defcompile
+  END
+  CheckScriptFailure(lines, 'E476:')
 enddef
 
 if has('python3')

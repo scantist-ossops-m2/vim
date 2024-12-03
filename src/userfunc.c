@@ -221,6 +221,8 @@ get_function_args(
 	    if (theline == NULL)
 		break;
 	    vim_free(*line_to_free);
+	    if (*eap->cmdlinep == *line_to_free)
+		*eap->cmdlinep = theline;
 	    *line_to_free = theline;
 	    whitep = (char_u *)" ";
 	    p = skipwhite(theline);
@@ -720,12 +722,14 @@ get_function_body(
 	}
 	else
 	{
-	    vim_free(*line_to_free);
 	    if (eap->getline == NULL)
 		theline = getcmdline(':', 0L, indent, getline_options);
 	    else
 		theline = eap->getline(':', eap->cookie, indent,
 							      getline_options);
+	    if (*eap->cmdlinep == *line_to_free)
+		*eap->cmdlinep = theline;
+	    vim_free(*line_to_free);
 	    *line_to_free = theline;
 	}
 	if (KeyTyped)
@@ -837,7 +841,8 @@ get_function_body(
 			// we can simply point into it, otherwise we need to
 			// change "eap->cmdlinep".
 			eap->nextcmd = nextcmd;
-			if (*line_to_free != NULL)
+			if (*line_to_free != NULL
+					    && *eap->cmdlinep != *line_to_free)
 			{
 			    vim_free(*eap->cmdlinep);
 			    *eap->cmdlinep = *line_to_free;
@@ -1161,7 +1166,7 @@ lambda_function_body(
 	}
 	if (ga_grow(gap, 1) == FAIL || ga_grow(freegap, 1) == FAIL)
 	    goto erret;
-	if (cmdline != NULL)
+	if (eap.nextcmd != NULL)
 	    // more is following after the "}", which was skipped
 	    last = cmdline;
 	else
@@ -1175,7 +1180,7 @@ lambda_function_body(
 	((char_u **)freegap->ga_data)[freegap->ga_len++] = pnl;
     }
 
-    if (cmdline != NULL)
+    if (eap.nextcmd != NULL)
     {
 	garray_T *tfgap = &evalarg->eval_tofree_ga;
 
@@ -1187,6 +1192,8 @@ lambda_function_body(
 	{
 	    ((char_u **)(tfgap->ga_data))[tfgap->ga_len++] = cmdline;
 	    evalarg->eval_using_cmdline = TRUE;
+	    if (cmdline == line_to_free)
+		line_to_free = NULL;
 	}
     }
     else
@@ -1296,7 +1303,6 @@ get_lambda_tv(
     char_u	*start, *end;
     int		*old_eval_lavars = eval_lavars_used;
     int		eval_lavars = FALSE;
-    char_u	*tofree1 = NULL;
     char_u	*tofree2 = NULL;
     int		equal_arrow = **arg == '(';
     int		white_error = FALSE;
@@ -1378,12 +1384,6 @@ get_lambda_tv(
     ret = skip_expr_concatenate(arg, &start, &end, evalarg);
     if (ret == FAIL)
 	goto errret;
-    if (evalarg != NULL)
-    {
-	// avoid that the expression gets freed when another line break follows
-	tofree1 = evalarg->eval_tofree;
-	evalarg->eval_tofree = NULL;
-    }
 
     if (!equal_arrow)
     {
@@ -1505,10 +1505,6 @@ get_lambda_tv(
 
 theend:
     eval_lavars_used = old_eval_lavars;
-    if (evalarg != NULL && evalarg->eval_tofree == NULL)
-	evalarg->eval_tofree = tofree1;
-    else
-	vim_free(tofree1);
     vim_free(tofree2);
     if (types_optional)
 	ga_clear_strings(&argtypes);
@@ -1527,10 +1523,6 @@ errret:
     }
     vim_free(fp);
     vim_free(pt);
-    if (evalarg != NULL && evalarg->eval_tofree == NULL)
-	evalarg->eval_tofree = tofree1;
-    else
-	vim_free(tofree1);
     vim_free(tofree2);
     eval_lavars_used = old_eval_lavars;
     return FAIL;
@@ -3853,9 +3845,8 @@ list_functions(regmatch_T *regmatch)
  * Returns a pointer to the function or NULL if no function defined.
  */
     ufunc_T *
-define_function(exarg_T *eap, char_u *name_arg)
+define_function(exarg_T *eap, char_u *name_arg, char_u **line_to_free)
 {
-    char_u	*line_to_free = NULL;
     int		j;
     int		c;
     int		saved_did_emsg;
@@ -4107,7 +4098,7 @@ define_function(exarg_T *eap, char_u *name_arg)
     if (get_function_args(&p, ')', &newargs,
 			eap->cmdidx == CMD_def ? &argtypes : NULL, FALSE,
 			 NULL, &varargs, &default_args, eap->skip,
-			 eap, &line_to_free) == FAIL)
+			 eap, line_to_free) == FAIL)
 	goto errret_2;
     whitep = p;
 
@@ -4217,7 +4208,7 @@ define_function(exarg_T *eap, char_u *name_arg)
 
     // Do not define the function when getting the body fails and when
     // skipping.
-    if (get_function_body(eap, &newlines, line_arg, &line_to_free) == FAIL
+    if (get_function_body(eap, &newlines, line_arg, line_to_free) == FAIL
 	    || eap->skip)
 	goto erret;
 
@@ -4497,7 +4488,6 @@ errret_2:
 	VIM_CLEAR(fp->uf_arg_types);
 ret_free:
     ga_clear_strings(&argtypes);
-    vim_free(line_to_free);
     vim_free(fudi.fd_newkey);
     if (name != name_arg)
 	vim_free(name);
@@ -4513,7 +4503,10 @@ ret_free:
     void
 ex_function(exarg_T *eap)
 {
-    (void)define_function(eap, NULL);
+    char_u *line_to_free = NULL;
+
+    (void)define_function(eap, NULL, &line_to_free);
+    vim_free(line_to_free);
 }
 
 /*
