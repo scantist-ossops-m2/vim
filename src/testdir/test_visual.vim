@@ -659,6 +659,18 @@ func Test_linewise_select_mode()
   exe "normal GkkgH\<Del>"
   call assert_equal(['', 'b', 'c'], getline(1, '$'))
 
+func Test_visual_area_adjusted_when_hiding()
+  " The Visual area ended after the end of the line after :hide
+  call setline(1, 'xxx')
+  vsplit Xfile
+  call setline(1, 'xxxxxxxx')
+  norm! $o
+  hid
+  norm! zW
+  bwipe!
+  bwipe!
+endfunc
+
 
   " linewise select mode: delete middle two lines
   call deletebufline('', 1, '$')
