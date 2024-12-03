@@ -3318,3 +3318,5 @@ EXTERN char e_cannot_specify_both_type_and_types[]
 EXTERN char e_can_only_use_left_padding_when_column_is_zero[]
 	INIT(= N_("E1296: Can only use left padding when column is zero"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
