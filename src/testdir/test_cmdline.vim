@@ -700,6 +700,9 @@ func Test_cmdline_remove_char()
 
     call feedkeys(":abc def\<S-Left>\<C-U>\<C-B>\"\<CR>", 'tx')
     call assert_equal('"def', @:, e)
+
+    " This was going before the start in latin1.
+    call feedkeys(": \<C-W>\<CR>", 'tx')
   endfor
 
   let &encoding = encoding_save
@@ -730,6 +733,14 @@ func Test_illegal_address2()
   quit!
   bwipe!
   call delete('Xtest.vim')
+endfunc
+
+func Test_mark_from_line_zero()
+  " this was reading past the end of the first (empty) line
+  new
+  norm oxxxx
+  call assert_fails("0;'(", 'E20:')
+  bwipe!
 endfunc
 
 func Test_cmdline_complete_wildoptions()
@@ -2436,6 +2447,18 @@ func Test_cmdline_complete_dlist()
   call assert_equal("\"dlist 10 /pat\\\t", @:)
   call feedkeys(":dlist 10 /pat/ | chist\<Tab>\<C-B>\"\<CR>", 'xt')
   call assert_equal("\"dlist 10 /pat/ | chistory", @:)
+endfunc
+
+func Test_recursive_register()
+  let @= = ''
+  silent! ?e/
+  let caught = 'no'
+  try
+    normal // 
+  catch /E169:/
+    let caught = 'yes'
+  endtry
+  call assert_equal('yes', caught)
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
