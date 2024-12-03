@@ -356,5 +356,13 @@ func Test_cmdwin_ctrl_bsl()
   call assert_equal('', getcmdwintype())
 endfunc
 
+func Test_cmdwin_virtual_edit()
+  enew!
+  set ve=all cpo+=$
+  silent normal q/s
+
+  set ve= cpo-=$
+endfunc
+
 
 " vim: shiftwidth=2 sts=2 expandtab
