@@ -3856,4 +3856,9 @@ func Test_mouse_shape_after_failed_change()
   call delete('Xmouseshapes')
 endfunc
 
+func Test_normal34_zet_large()
+  " shouldn't cause overflow
+  norm! z9765405999999999999
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab
