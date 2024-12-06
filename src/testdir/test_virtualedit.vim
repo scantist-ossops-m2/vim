@@ -84,6 +84,16 @@ func Test_edit_change()
   set virtualedit=
 endfunc
 
+func Test_edit_special_char()
+  new
+  se ve=all
+  norm a0
+  sil! exe "norm o00000\<Nul>k<a0s"
+
+  bwipe!
+  set virtualedit=
+endfunc
+
 " Tests for pasting at the beginning, end and middle of a tab character
 " in virtual edit mode.
 func Test_paste_in_tab()
@@ -356,5 +366,19 @@ func Test_delete_break_tab()
   set virtualedit&
   close!
 endfunc
+
+" this was replacing the NUL at the end of the line 
+func Test_virtualedit_replace_after_tab()
+  new
+  s/\v/	0
+  set ve=all
+  let @" = ''
+  sil! norm vPvr0
+  
+  call assert_equal("\t0", getline(1))
+  set ve&
+  bwipe!
+endfunc
+
 
 " vim: shiftwidth=2 sts=2 expandtab

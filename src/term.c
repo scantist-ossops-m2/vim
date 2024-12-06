@@ -3237,6 +3237,12 @@ check_shellsize(void)
     if (Rows < min_rows())	// need room for one window and command line
 	Rows = min_rows();
     limit_screen_size();
+
+    // make sure these values are not invalid
+    if (cmdline_row >= Rows)
+	cmdline_row = Rows - 1;
+    if (msg_row >= Rows)
+	msg_row = Rows - 1;
 }
 
 /*
@@ -4427,6 +4433,7 @@ check_termcode(
 	if (*tp == ESC && !p_ek && (State & INSERT))
 	    continue;
 
+	tp[len] = NUL;
 	key_name[0] = NUL;	// no key name found yet
 	key_name[1] = NUL;	// no key name found yet
 	modifiers = 0;		// no modifiers yet
