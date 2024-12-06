@@ -938,4 +938,31 @@ func Test_regexp_last_subst_string()
   close!
 endfunc
 
+func Test_using_visual_position()
+  " this was using freed memory
+  new
+  exe "norm 0o\<Esc>\<C-V>k\<C-X>o0"
+  /\%V
+  bwipe!
+endfunc
+
+func Test_using_invalid_visual_position()
+  " this was going beyond the end of the line
+  new
+  exe "norm 0o000\<Esc>0\<C-V>$s0"
+  /\%V
+  bwipe!
+endfunc
+
+func Test_recursive_substitute_expr()
+  new
+  func Repl()
+    s
+  endfunc
+  silent! s/\%')/~\=Repl()
+
+  bwipe!
+  delfunc Repl
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab
