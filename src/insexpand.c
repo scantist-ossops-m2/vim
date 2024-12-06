@@ -686,7 +686,8 @@ ins_compl_add(
 	{
 	    if (!ins_compl_at_original_text(match)
 		    && STRNCMP(match->cp_str, str, len) == 0
-		    && match->cp_str[len] == NUL)
+		    && ((int)STRLEN(match->cp_str) <= len
+						 || match->cp_str[len] == NUL))
 		return NOTDONE;
 	    match = match->cp_next;
 	} while (match != NULL && match != compl_first_match);
