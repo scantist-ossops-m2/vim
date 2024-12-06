@@ -590,9 +590,8 @@ func Test_pum_with_preview_win()
 
   call writefile(lines, 'Xpreviewscript')
   let buf = RunVimInTerminal('-S Xpreviewscript', #{rows: 12})
-  call TermWait(buf, 50)
   call term_sendkeys(buf, "Gi\<C-X>\<C-O>")
-  call TermWait(buf, 100)
+  call TermWait(buf, 200)
   call term_sendkeys(buf, "\<C-N>")
   call VerifyScreenDump(buf, 'Test_pum_with_preview_win', {})
 
@@ -1850,5 +1849,55 @@ func Test_thesaurusfunc_callback()
   unlet g:TsrFunc1Args g:TsrFunc2Args
   %bw!
 endfunc
+
+func Test_infercase_very_long_line()
+  " this was truncating the line when inferring case
+  new
+  let longLine = "blah "->repeat(300)
+  let verylongLine = "blah "->repeat(400)
+  call setline(1, verylongLine)
+  call setline(2, longLine)
+  set ic infercase
+  exe "normal 2Go\<C-X>\<C-L>\<Esc>"
+  call assert_equal(longLine, getline(3))
+
+  " check that the too long text is NUL terminated
+  %del
+  norm o
+  norm 1987ax
+  exec "norm ox\<C-X>\<C-L>"
+  call assert_equal(repeat('x', 1987), getline(3))
+
+  bwipe!
+  set noic noinfercase
+endfunc
+
+func Test_ins_complete_add()
+  " this was reading past the end of allocated memory
+  new
+  norm o
+  norm 7o
+  sil! norm o
+
+  bwipe!
+endfunc
+
+
+func s:Tagfunc(t,f,o)
+  bwipe!
+  return []
+endfunc
+
+" This was using freed memory, since 'complete' was in a wiped out buffer.
+" Also using a window that was closed.
+func Test_tagfunc_wipes_out_buffer()
+  new
+  set complete=.,t,w,b,u,i
+  se tagfunc=s:Tagfunc
+  sil norm i
+
+  bwipe!
+endfunc
+
 
 " vim: shiftwidth=2 sts=2 expandtab

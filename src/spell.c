@@ -1275,7 +1275,7 @@ spell_move_to(
     char_u	*line;
     char_u	*p;
     char_u	*endp;
-    hlf_T	attr;
+    hlf_T	attr = 0;
     int		len;
 #ifdef FEAT_SYN_HL
     int		has_syntax = syntax_present(wp);
@@ -1308,6 +1308,8 @@ spell_move_to(
 
     while (!got_int)
     {
+	int empty_line;
+
 	line = ml_get_buf(wp->w_buffer, lnum, FALSE);
 
 	len = (int)STRLEN(line);
@@ -1340,7 +1342,9 @@ spell_move_to(
 	}
 
 	// Copy the line into "buf" and append the start of the next line if
-	// possible.
+	// possible.  Note: this ml_get_buf() may make "line" invalid, check
+	// for empty line first.
+	empty_line = *skipwhite(line) == NUL;
 	STRCPY(buf, line);
 	if (lnum < wp->w_buffer->b_ml.ml_line_count)
 	    spell_cat_line(buf + STRLEN(buf),
@@ -1488,7 +1492,7 @@ spell_move_to(
 	    --capcol;
 
 	    // But after empty line check first word in next line
-	    if (*skipwhite(line) == NUL)
+	    if (empty_line)
 		capcol = 0;
 	}
 
@@ -1556,6 +1560,10 @@ spell_load_lang(char_u *lang)
     sl.sl_slang = NULL;
     sl.sl_nobreak = FALSE;
 
+    // Disallow deleting the current buffer.  Autocommands can do weird things
+    // and cause "lang" to be freed.
+    ++curbuf->b_locked;
+
     // We may retry when no spell file is found for the language, an
     // autocommand may load it then.
     for (round = 1; round <= 2; ++round)
@@ -1609,6 +1617,8 @@ spell_load_lang(char_u *lang)
 	STRCPY(fname_enc + STRLEN(fname_enc) - 3, "add.spl");
 	do_in_runtimepath(fname_enc, DIP_ALL, spell_load_cb, &sl);
     }
+
+    --curbuf->b_locked;
 }
 
 /*
@@ -2092,8 +2102,8 @@ did_set_spelllang(win_T *wp)
 	    {
 		spell_load_lang(lang);
 		// SpellFileMissing autocommands may do anything, including
-		// destroying the buffer we are using...
-		if (!bufref_valid(&bufref))
+		// destroying the buffer we are using or closing the window.
+		if (!bufref_valid(&bufref) || !win_valid_any_tab(wp))
 		{
 		    ret_msg = N_("E797: SpellFileMissing autocommand deleted buffer");
 		    goto theend;
@@ -3991,9 +4001,10 @@ spell_dump_compl(
 		    n = arridx[depth] + curi[depth];
 		    ++curi[depth];
 		    c = byts[n];
-		    if (c == 0)
+		    if (c == 0 || depth >= MAXWLEN - 1)
 		    {
-			// End of word, deal with the word.
+			// End of word or reached maximum length, deal with the
+			// word.
 			// Don't use keep-case words in the fold-case tree,
 			// they will appear in the keep-case tree.
 			// Only use the word when the region matches.

@@ -1073,10 +1073,13 @@ cmdline_erase_chars(
 	{
 	    while (p > ccline.cmdbuff && vim_isspace(p[-1]))
 		--p;
-	    i = vim_iswordc(p[-1]);
-	    while (p > ccline.cmdbuff && !vim_isspace(p[-1])
-		    && vim_iswordc(p[-1]) == i)
-		--p;
+	    if (p > ccline.cmdbuff)
+	    {
+		i = vim_iswordc(p[-1]);
+		while (p > ccline.cmdbuff && !vim_isspace(p[-1])
+			&& vim_iswordc(p[-1]) == i)
+		    --p;
+	    }
 	}
 	else
 	    --p;
@@ -1199,6 +1202,7 @@ cmdline_insert_reg(int *gotesc UNUSED)
 {
     int		i;
     int		c;
+    int		save_new_cmdpos = new_cmdpos;
 
 #ifdef USE_ON_FLY_SCROLL
     dont_scroll = TRUE;	// disallow scrolling here
@@ -1217,8 +1221,6 @@ cmdline_insert_reg(int *gotesc UNUSED)
 #ifdef FEAT_EVAL
     /*
      * Insert the result of an expression.
-     * Need to save the current command line, to be able to enter
-     * a new one...
      */
     new_cmdpos = -1;
     if (c == '=')
@@ -1259,6 +1261,8 @@ cmdline_insert_reg(int *gotesc UNUSED)
 	}
 #endif
     }
+    new_cmdpos = save_new_cmdpos;
+
     // remove the double quote
     redrawcmd();
 
@@ -1513,7 +1517,7 @@ init_ccline(int firstc, int indent)
     ccline.cmdindent = (firstc > 0 ? indent : 0);
 
     // alloc initial ccline.cmdbuff
-    alloc_cmdbuff(exmode_active ? 250 : indent + 1);
+    alloc_cmdbuff(indent + 50);
     if (ccline.cmdbuff == NULL)
 	return FAIL;
     ccline.cmdlen = ccline.cmdpos = 0;
@@ -1569,6 +1573,7 @@ getcmdline_int(
     int		indent,		// indent for inside conditionals
     int		clear_ccline)	// clear ccline first
 {
+    static int	depth = 0;	    // call depth
     int		c;
     int		i;
     int		j;
@@ -1597,6 +1602,9 @@ getcmdline_int(
     cmdline_info_T save_ccline;
     int		did_save_ccline = FALSE;
     int		cmdline_type;
+
+    // one recursion level deeper
+    ++depth;
 
     if (ccline.cmdbuff != NULL)
     {
@@ -1627,6 +1635,13 @@ getcmdline_int(
 
     if (init_ccline(firstc, indent) != OK)
 	goto theend;	// out of memory
+
+    if (depth == 50)
+    {
+	// Somehow got into a loop recursively calling getcmdline(), bail out.
+	emsg(_(e_command_too_recursive));
+	goto theend;
+    }
 
     ExpandInit(&xpc);
     ccline.xpc = &xpc;
@@ -2492,6 +2507,7 @@ theend:
     {
 	char_u *p = ccline.cmdbuff;
 
+	--depth;
 	if (did_save_ccline)
 	    restore_cmdline(&save_ccline);
 	else

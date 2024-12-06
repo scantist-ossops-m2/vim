@@ -812,7 +812,7 @@ func_needs_compiling(ufunc_T *ufunc, compiletype_T compile_type)
  * Compile a nested :def command.
  */
     static char_u *
-compile_nested_function(exarg_T *eap, cctx_T *cctx, char_u **line_to_free)
+compile_nested_function(exarg_T *eap, cctx_T *cctx, garray_T *lines_to_free)
 {
     int		is_global = *eap->arg == 'g' && eap->arg[1] == ':';
     char_u	*name_start = eap->arg;
@@ -878,7 +878,7 @@ compile_nested_function(exarg_T *eap, cctx_T *cctx, char_u **line_to_free)
 	goto theend;
     }
 
-    ufunc = define_function(eap, lambda_name, line_to_free);
+    ufunc = define_function(eap, lambda_name, lines_to_free);
     if (ufunc == NULL)
     {
 	r = eap->skip ? OK : FAIL;
@@ -1022,11 +1022,14 @@ generate_loadvar(
 	    generate_LOADV(cctx, name + 2, TRUE);
 	    break;
 	case dest_local:
-	    if (lvar->lv_from_outer > 0)
-		generate_LOADOUTER(cctx, lvar->lv_idx, lvar->lv_from_outer,
+	    if (cctx->ctx_skip != SKIP_YES)
+	    {
+		if (lvar->lv_from_outer > 0)
+		    generate_LOADOUTER(cctx, lvar->lv_idx, lvar->lv_from_outer,
 									 type);
-	    else
-		generate_LOAD(cctx, ISN_LOAD, lvar->lv_idx, NULL, type);
+		else
+		    generate_LOAD(cctx, ISN_LOAD, lvar->lv_idx, NULL, type);
+	    }
 	    break;
 	case dest_expr:
 	    // list or dict value should already be on the stack.
@@ -1766,6 +1769,9 @@ compile_assign_unlet(
 	}
     }
 
+    if (cctx->ctx_skip == SKIP_YES)
+	return OK;
+
     // Load the dict or list.  On the stack we then have:
     // - value (for assignment, not for :unlet)
     // - index
@@ -2471,7 +2477,7 @@ compile_def_function(
 	cctx_T		*outer_cctx)
 {
     char_u	*line = NULL;
-    char_u	*line_to_free = NULL;
+    garray_T	lines_to_free;
     char_u	*p;
     char	*errormsg = NULL;	// error message
     cctx_T	cctx;
@@ -2488,6 +2494,9 @@ compile_def_function(
     int		prof_lnum = -1;
 #endif
     int		debug_lnum = -1;
+
+    // allocated lines are freed at the end
+    ga_init2(&lines_to_free, sizeof(char_u *), 50);
 
     // When using a function that was compiled before: Free old instructions.
     // The index is reused.  Otherwise add a new entry in "def_functions".
@@ -2656,8 +2665,8 @@ compile_def_function(
 	    if (line != NULL)
 	    {
 		line = vim_strsave(line);
-		vim_free(line_to_free);
-		line_to_free = line;
+		if (ga_add_string(&lines_to_free, line) == FAIL)
+		    goto erret;
 	    }
 	}
 
@@ -2786,7 +2795,8 @@ compile_def_function(
 	cmd = ea.cmd;
 	if ((*cmd != '$' || starts_with_colon)
 		&& (starts_with_colon || !(*cmd == '\''
-		       || (cmd[0] == cmd[1] && (*cmd == '+' || *cmd == '-')))))
+		       || (cmd[0] != NUL && cmd[0] == cmd[1]
+					    && (*cmd == '+' || *cmd == '-')))))
 	{
 	    ea.cmd = skip_range(ea.cmd, TRUE, NULL);
 	    if (ea.cmd > cmd)
@@ -2900,7 +2910,7 @@ compile_def_function(
 	    case CMD_def:
 	    case CMD_function:
 		    ea.arg = p;
-		    line = compile_nested_function(&ea, &cctx, &line_to_free);
+		    line = compile_nested_function(&ea, &cctx, &lines_to_free);
 		    break;
 
 	    case CMD_return:
@@ -3210,7 +3220,7 @@ erret:
     if (do_estack_push)
 	estack_pop();
 
-    vim_free(line_to_free);
+    ga_clear_strings(&lines_to_free);
     free_imported(&cctx);
     free_locals(&cctx);
     ga_clear(&cctx.ctx_type_stack);

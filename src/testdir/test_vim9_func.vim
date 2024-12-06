@@ -1742,6 +1742,21 @@ def Test_nested_function_with_args_split()
   CheckScriptFailure(lines, 'E1173: Text found after endfunction: BBBB')
 enddef
 
+def Test_error_in_function_args()
+  var lines =<< trim END
+      def FirstFunction()
+        def SecondFunction(J  =
+        # Nois
+        # one
+         
+         enddef|BBBB
+      enddef
+      # Compile all functions
+      defcompile
+  END
+  CheckScriptFailure(lines, 'E488:')
+enddef
+
 def Test_return_type_wrong()
   CheckScriptFailure([
         'def Func(): number',
@@ -2033,7 +2048,6 @@ func Test_free_dict_while_in_funcstack()
 endfunc
 
 def Run_Test_free_dict_while_in_funcstack()
-
   # this was freeing the TermRun() default argument dictionary while it was
   # still referenced in a funcstack_T
   var lines =<< trim END
@@ -3535,6 +3549,17 @@ def Test_numbered_function_reference()
   # check that the function still exists
   assert_equal(output, execute('legacy func g:mydict.afunc'))
   unlet g:mydict
+enddef
+
+def Test_go_beyond_end_of_cmd()
+  # this was reading the byte after the end of the line
+  var lines =<< trim END
+    def F()
+      cal
+    enddef
+    defcompile
+  END
+  CheckScriptFailure(lines, 'E476:')
 enddef
 
 if has('python3')

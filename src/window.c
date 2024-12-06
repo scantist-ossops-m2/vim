@@ -111,6 +111,21 @@ log_frame_layout(frame_T *frame)
 #endif
 
 /*
+ * Return the current window, unless in the cmdline window and "prevwin" is
+ * set, then return "prevwin".
+ */
+    win_T *
+prevwin_curwin(void)
+{
+    return
+#ifdef FEAT_CMDWIN
+	// In cmdwin, the alternative buffer should be used.
+	is_in_cmdwin() && prevwin != NULL ? prevwin :
+#endif
+	curwin;
+}
+
+/*
  * All CTRL-W window commands are handled here, called from normal_cmd().
  */
     void
@@ -564,9 +579,16 @@ wingotofile:
 		CHECK_CMDWIN;
 		if ((len = find_ident_under_cursor(&ptr, FIND_IDENT)) == 0)
 		    break;
+
+		// Make a copy, if the line was changed it will be freed.
+		ptr = vim_strnsave(ptr, len);
+		if (ptr == NULL)
+		    break;
+
 		find_pattern_in_path(ptr, 0, len, TRUE,
 			Prenum == 0 ? TRUE : FALSE, type,
 			Prenum1, ACTION_SPLIT, (linenr_T)1, (linenr_T)MAXLNUM);
+		vim_free(ptr);
 		curwin->w_set_curswant = TRUE;
 		break;
 #endif
@@ -1691,6 +1713,11 @@ win_exchange(long Prenum)
 
     (void)win_comp_pos();		// recompute window positions
 
+    if (wp->w_buffer != curbuf)
+	reset_VIsual_and_resel();
+    else if (VIsual_active)
+	wp->w_cursor = curwin->w_cursor;
+
     win_enter(wp, TRUE);
     redraw_all_later(NOT_VALID);
 }
@@ -2535,6 +2562,8 @@ win_close(win_T *win, int free_buf)
 	 */
 	if (wp->w_buffer != curbuf)
 	{
+	    reset_VIsual_and_resel();	// stop Visual mode
+
 	    other_buffer = TRUE;
 	    win->w_closing = TRUE;
 	    apply_autocmds(EVENT_BUFLEAVE, NULL, NULL, FALSE, curbuf);
@@ -3926,6 +3955,14 @@ win_new_tabpage(int after)
     tabpage_T	*newtp;
     int		n;
 
+#ifdef FEAT_CMDWIN
+    if (cmdwin_type != 0)
+    {
+	emsg(_(e_invalid_in_cmdline_window));
+	return FAIL;
+    }
+#endif
+
     newtp = alloc_tabpage();
     if (newtp == NULL)
 	return FAIL;
@@ -4300,6 +4337,7 @@ goto_tabpage(int n)
 	text_locked_msg();
 	return;
     }
+    CHECK_CMDWIN;
 
     // If there is only one it can't work.
     if (first_tabpage->tp_next == NULL)
@@ -4367,6 +4405,8 @@ goto_tabpage_tp(
     int		trigger_enter_autocmds,
     int		trigger_leave_autocmds)
 {
+    CHECK_CMDWIN;
+
     // Don't repeat a message in another tab page.
     set_keep_msg(NULL, 0);
 
@@ -5332,7 +5372,7 @@ frame_remove(frame_T *frp)
 win_alloc_lines(win_T *wp)
 {
     wp->w_lines_valid = 0;
-    wp->w_lines = ALLOC_CLEAR_MULT(wline_T, Rows );
+    wp->w_lines = ALLOC_CLEAR_MULT(wline_T, Rows);
     if (wp->w_lines == NULL)
 	return FAIL;
     return OK;
@@ -6676,12 +6716,10 @@ only_one_window(void)
 }
 
 /*
- * Correct the cursor line number in other windows.  Used after changing the
- * current buffer, and before applying autocommands.
- * When "do_curwin" is TRUE, also check current window.
+ * Implementation of check_lnums() and check_lnums_nested().
  */
-    void
-check_lnums(int do_curwin)
+    static void
+check_lnums_both(int do_curwin, int nested)
 {
     win_T	*wp;
     tabpage_T	*tp;
@@ -6689,19 +6727,42 @@ check_lnums(int do_curwin)
     FOR_ALL_TAB_WINDOWS(tp, wp)
 	if ((do_curwin || wp != curwin) && wp->w_buffer == curbuf)
 	{
-	    // save the original cursor position and topline
-	    wp->w_save_cursor.w_cursor_save = wp->w_cursor;
-	    wp->w_save_cursor.w_topline_save = wp->w_topline;
+	    if (!nested)
+	    {
+		// save the original cursor position and topline
+		wp->w_save_cursor.w_cursor_save = wp->w_cursor;
+		wp->w_save_cursor.w_topline_save = wp->w_topline;
+	    }
 
 	    if (wp->w_cursor.lnum > curbuf->b_ml.ml_line_count)
 		wp->w_cursor.lnum = curbuf->b_ml.ml_line_count;
 	    if (wp->w_topline > curbuf->b_ml.ml_line_count)
 		wp->w_topline = curbuf->b_ml.ml_line_count;
 
-	    // save the corrected cursor position and topline
+	    // save the (corrected) cursor position and topline
 	    wp->w_save_cursor.w_cursor_corr = wp->w_cursor;
 	    wp->w_save_cursor.w_topline_corr = wp->w_topline;
 	}
+}
+
+/*
+ * Correct the cursor line number in other windows.  Used after changing the
+ * current buffer, and before applying autocommands.
+ * When "do_curwin" is TRUE, also check current window.
+ */
+    void
+check_lnums(int do_curwin)
+{
+    check_lnums_both(do_curwin, FALSE);
+}
+
+/*
+ * Like check_lnums() but for when check_lnums() was already called.
+ */
+    void
+check_lnums_nested(int do_curwin)
+{
+    check_lnums_both(do_curwin, TRUE);
 }
 
 /*

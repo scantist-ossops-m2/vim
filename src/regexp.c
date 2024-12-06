@@ -1670,7 +1670,11 @@ cstrchr(char_u *s, int c)
 	{
 	    if (enc_utf8 && c > 0x80)
 	    {
-		if (utf_fold(utf_ptr2char(p)) == cc)
+		int uc = utf_ptr2char(p);
+
+		// Do not match an illegal byte.  E.g. 0xff matches 0xc3 0xbf,
+		// not 0xff.
+		if ((uc < 0x80 || uc != *p) && utf_fold(uc) == cc)
 		    return p;
 	    }
 	    else if (*p == c || *p == cc)
@@ -1795,11 +1799,11 @@ regtilde(char_u *source, int magic)
 	}
     }
 
+    // Store a copy of newsub  in reg_prev_sub.  It is always allocated,
+    // because recursive calls may make the returned string invalid.
     vim_free(reg_prev_sub);
-    if (newsub != source)	// newsub was allocated, just keep it
-	reg_prev_sub = newsub;
-    else			// no ~ found, need to save newsub
-	reg_prev_sub = vim_strsave(newsub);
+    reg_prev_sub = vim_strsave(newsub);
+
     return newsub;
 }
 

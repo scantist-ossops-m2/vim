@@ -1042,9 +1042,16 @@ endfunc
 
 func Test_using_mark_position()
   " this was using freed memory
+  " new engine
   new
   norm O0
   call assert_fails("s/\\%')", 'E486:')
+  bwipe!
+
+  " old engine
+  new
+  norm O0
+  call assert_fails("s/\\%#=1\\%')", 'E486:')
   bwipe!
 endfunc
 
@@ -1062,6 +1069,17 @@ func Test_using_invalid_visual_position()
   exe "norm 0o000\<Esc>0\<C-V>$s0"
   /\%V
   bwipe!
+endfunc
+
+func Test_recursive_substitute_expr()
+  new
+  func Repl()
+    s
+  endfunc
+  silent! s/\%')/~\=Repl()
+
+  bwipe!
+  delfunc Repl
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
