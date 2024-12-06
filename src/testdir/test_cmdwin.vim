@@ -373,5 +373,15 @@ func Test_cmdwin_virtual_edit()
   set ve= cpo-=$
 endfunc
 
+" This was using a pointer to a freed buffer
+func Test_cmdwin_freed_buffer_ptr()
+  au BufEnter * next 0| file 
+  edit 0
+  silent! norm q/
+
+  au! BufEnter
+  bwipe!
+endfunc
+
 
 " vim: shiftwidth=2 sts=2 expandtab
