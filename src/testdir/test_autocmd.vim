@@ -2050,6 +2050,25 @@ func Test_autocmd_nested()
   call assert_fails('au WinNew * nested nested echo bad', 'E983:')
 endfunc
 
+func Test_autocmd_nested_cursor_invalid()
+  set laststatus=0
+  copen
+  cclose
+  call setline(1, ['foo', 'bar', 'baz'])
+  3
+  augroup nested_inv
+    autocmd User foo ++nested copen
+    autocmd BufAdd * let &laststatus = 2 - &laststatus
+  augroup END
+  doautocmd User foo
+
+  augroup nested_inv
+    au!
+  augroup END
+  set laststatus&
+  bwipe!
+endfunc
+
 func Test_autocmd_once()
   " Without ++once WinNew triggers twice
   let g:did_split = 0
@@ -2847,5 +2866,25 @@ func Test_autocmd_with_block()
   augroup END
 endfunc
 
+
+func Test_autocmd_split_dummy()
+  " Autocommand trying to split a window containing a dummy buffer.
+  auto BufReadPre * exe "sbuf " .. expand("<abuf>") 
+  " Avoid the "W11" prompt
+  au FileChangedShell * let v:fcs_choice = 'reload'
+  func Xautocmd_changelist()
+    cal writefile(['Xtestfile2:4:4'], 'Xerr')
+    edit Xerr
+    lex 'Xtestfile2:4:4'
+  endfunc
+  call Xautocmd_changelist()
+  call assert_fails('call Xautocmd_changelist()', 'E86:')
+
+  au! BufReadPre
+  au! FileChangedShell
+  delfunc Xautocmd_changelist
+  bwipe! Xerr
+  call delete('Xerr')
+endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab

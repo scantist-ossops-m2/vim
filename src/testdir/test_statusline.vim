@@ -427,6 +427,13 @@ func Test_statusline()
   set splitbelow&
 endfunc
 
+func Test_statusline_trailing_percent_zero()
+  " this was causing illegal memory access
+  set laststatus=2 stl=%!%0
+  call assert_fails('redraw', 'E15: Invalid expression: "%0"')
+  set laststatus& stl&
+endfunc
+
 func Test_statusline_visual()
   func CallWordcount()
     call wordcount()
@@ -520,6 +527,16 @@ func Test_statusline_mbyte_fillchar()
   call assert_match('^a\+═\+b═a\+━\+b$', s:get_statusline())
   set statusline& fillchars& laststatus&
   %bw!
+endfunc
+
+" Used to write beyond allocated memory.  This assumes MAXPATHL is 4096 bytes.
+func Test_statusline_verylong_filename()
+  let fname = repeat('x', 4090)
+  exe "new " .. fname
+  set buftype=help
+  set previewwindow
+  redraw
+  bwipe!
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
