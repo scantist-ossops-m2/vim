@@ -4617,6 +4617,8 @@ build_stl_str_hl(
 #endif
 	if (vim_strchr(STL_ALL, *s) == NULL)
 	{
+	    if (*s == NUL)  // can happen with "%0"
+		break;
 	    s++;
 	    continue;
 	}
@@ -5358,6 +5360,10 @@ ex_buffer_all(exarg_T *eap)
 	all = FALSE;
     else
 	all = TRUE;
+
+    // Stop Visual mode, the cursor and "VIsual" may very well be invalid after
+    // switching to another buffer.
+    reset_VIsual_and_resel();
 
     setpcmark();
 
