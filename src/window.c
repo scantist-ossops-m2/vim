@@ -2087,6 +2087,8 @@ win_equal_rec(
 		if (hnc)	    // add next_curwin size
 		{
 		    next_curwin_size -= p_wiw - (m - n);
+		    if (next_curwin_size < 0)
+			next_curwin_size = 0;
 		    new_size += next_curwin_size;
 		    room -= new_size - next_curwin_size;
 		}
@@ -6495,7 +6497,8 @@ scroll_to_fraction(win_T *wp, int prev_height)
     void
 win_new_width(win_T *wp, int width)
 {
-    wp->w_width = width;
+    // Should we give an error if width < 0?
+    wp->w_width = width < 0 ? 0 : width;
     wp->w_lines_valid = 0;
     changed_line_abv_curs_win(wp);
     invalidate_botline_win(wp);
