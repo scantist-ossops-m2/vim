@@ -159,6 +159,19 @@ func Test_spell_file_missing()
   %bwipe!
 endfunc
 
+func Test_spell_file_missing_bwipe()
+  " this was using a window that was wiped out in a SpellFileMissing autocmd
+  set spelllang=xy
+  au SpellFileMissing * n0
+  set spell
+  au SpellFileMissing * bw
+  snext somefile
+
+  au! SpellFileMissing
+  bwipe!
+  set nospell spelllang=en
+endfunc
+
 func Test_spelldump()
   " In case the spell file is not found avoid getting the download dialog, we
   " would get stuck at the prompt.
@@ -953,6 +966,15 @@ func Test_spell_screendump()
   " clean up
   call StopVimInTerminal(buf)
   call delete('XtestSpell')
+endfunc
+
+func Test_z_equal_with_large_count()
+  split
+  set spell
+  call setline(1, "ff")
+  norm 0z=337203685477580
+  set nospell
+  bwipe!
 endfunc
 
 let g:test_data_aff1 = [

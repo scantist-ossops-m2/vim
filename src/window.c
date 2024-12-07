@@ -534,6 +534,8 @@ newwindow:
     case Ctrl_F:
 wingotofile:
 		CHECK_CMDWIN;
+		if (check_text_or_curbuf_locked(NULL))
+		    break;
 
 		ptr = grab_file_name(Prenum1, &lnum);
 		if (ptr != NULL)
@@ -857,7 +859,7 @@ win_split(int size, int flags)
  * When "new_wp" is NULL: split the current window in two.
  * When "new_wp" is not NULL: insert this window at the far
  * top/left/right/bottom.
- * return FAIL for failure, OK otherwise
+ * Return FAIL for failure, OK otherwise.
  */
     int
 win_split_ins(
@@ -2087,6 +2089,8 @@ win_equal_rec(
 		if (hnc)	    // add next_curwin size
 		{
 		    next_curwin_size -= p_wiw - (m - n);
+		    if (next_curwin_size < 0)
+			next_curwin_size = 0;
 		    new_size += next_curwin_size;
 		    room -= new_size - next_curwin_size;
 		}
@@ -6495,7 +6499,8 @@ scroll_to_fraction(win_T *wp, int prev_height)
     void
 win_new_width(win_T *wp, int width)
 {
-    wp->w_width = width;
+    // Should we give an error if width < 0?
+    wp->w_width = width < 0 ? 0 : width;
     wp->w_lines_valid = 0;
     changed_line_abv_curs_win(wp);
     invalidate_botline_win(wp);
@@ -6770,12 +6775,10 @@ only_one_window(void)
 }
 
 /*
- * Correct the cursor line number in other windows.  Used after changing the
- * current buffer, and before applying autocommands.
- * When "do_curwin" is TRUE, also check current window.
+ * Implementation of check_lnums() and check_lnums_nested().
  */
-    void
-check_lnums(int do_curwin)
+    static void
+check_lnums_both(int do_curwin, int nested)
 {
     win_T	*wp;
     tabpage_T	*tp;
@@ -6783,19 +6786,42 @@ check_lnums(int do_curwin)
     FOR_ALL_TAB_WINDOWS(tp, wp)
 	if ((do_curwin || wp != curwin) && wp->w_buffer == curbuf)
 	{
-	    // save the original cursor position and topline
-	    wp->w_save_cursor.w_cursor_save = wp->w_cursor;
-	    wp->w_save_cursor.w_topline_save = wp->w_topline;
+	    if (!nested)
+	    {
+		// save the original cursor position and topline
+		wp->w_save_cursor.w_cursor_save = wp->w_cursor;
+		wp->w_save_cursor.w_topline_save = wp->w_topline;
+	    }
 
 	    if (wp->w_cursor.lnum > curbuf->b_ml.ml_line_count)
 		wp->w_cursor.lnum = curbuf->b_ml.ml_line_count;
 	    if (wp->w_topline > curbuf->b_ml.ml_line_count)
 		wp->w_topline = curbuf->b_ml.ml_line_count;
 
-	    // save the corrected cursor position and topline
+	    // save the (corrected) cursor position and topline
 	    wp->w_save_cursor.w_cursor_corr = wp->w_cursor;
 	    wp->w_save_cursor.w_topline_corr = wp->w_topline;
 	}
+}
+
+/*
+ * Correct the cursor line number in other windows.  Used after changing the
+ * current buffer, and before applying autocommands.
+ * When "do_curwin" is TRUE, also check current window.
+ */
+    void
+check_lnums(int do_curwin)
+{
+    check_lnums_both(do_curwin, FALSE);
+}
+
+/*
+ * Like check_lnums() but for when check_lnums() was already called.
+ */
+    void
+check_lnums_nested(int do_curwin)
+{
+    check_lnums_both(do_curwin, TRUE);
 }
 
 /*

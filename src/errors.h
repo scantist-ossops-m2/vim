@@ -3304,3 +3304,5 @@ EXTERN char e_could_not_check_for_pending_sigalrm_str[]
 EXTERN char e_substitute_nesting_too_deep[]
 	INIT(= N_("E1290: substitute nesting too deep"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
