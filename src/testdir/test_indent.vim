@@ -121,6 +121,16 @@ func Test_lisp_indent()
   close!
 endfunc
 
+func Test_lisp_indent_quoted()
+  " This was going past the end of the line
+  new
+  setlocal lisp autoindent
+  call setline(1, ['"[', '='])
+  normal Gvk=
+
+  bwipe!
+endfunc
+
 " Test for setting the 'indentexpr' from a modeline
 func Test_modeline_indent_expr()
   let modeline = &modeline
@@ -140,6 +150,17 @@ func Test_modeline_indent_expr()
   let &modeline = modeline
   close!
   call delete('Xfile.txt')
+endfunc
+
+" Test for indenting with large amount, causes overflow
+func Test_indent_overflow_count()
+  new
+  setl sw=8
+  call setline(1, "abc")
+  norm! V2147483647>
+  " indents by INT_MAX
+  call assert_equal(2147483647, indent(1))
+  close!
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
