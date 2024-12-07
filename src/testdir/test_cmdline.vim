@@ -1330,4 +1330,21 @@ func Test_cmdwin_blocked_commands()
   call assert_fails('call feedkeys("q:\<F1>\<CR>", "xt")', 'E11:')
 endfunc
 
+func Test_recursive_register()
+  let @= = ''
+  silent! ?e/
+  let caught = 'no'
+  try
+    normal // 
+  catch /E169:/
+    let caught = 'yes'
+  endtry
+  call assert_equal('yes', caught)
+endfunc
+
+func Test_long_error_message()
+  " the error should be truncated, not overrun IObuff
+  silent! norm Q00000000000000     000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000                                                                                                                                                                                                                        
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab
