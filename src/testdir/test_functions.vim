@@ -2962,4 +2962,9 @@ func Test_virtcol()
   bwipe!
 endfunc
 
+func Test_fullcommand()
+  " this used to crash vim
+  call assert_equal('', fullcommand(10))
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab

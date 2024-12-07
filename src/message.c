@@ -1820,8 +1820,8 @@ str2special(
 	    *sp = str + 1;
     }
     else
-	// single-byte character or illegal byte
-	*sp = str + 1;
+	// single-byte character, NUL or illegal byte
+	*sp = str + (*str == NUL ? 0 : 1);
 
     // Make special keys and C0 control characters in <> form, also <M-Space>.
     // Use <Space> only for lhs of a mapping.
@@ -2806,7 +2806,8 @@ msg_puts_printf(char_u *str, int maxlen)
     {
 	char_u *tofree = NULL;
 
-	if (maxlen > 0 && STRLEN(p) > (size_t)maxlen)
+	if (maxlen > 0 && vim_strlen_maxlen((char *)p, (size_t)maxlen)
+							     >= (size_t)maxlen)
 	{
 	    tofree = vim_strnsave(p, (size_t)maxlen);
 	    p = tofree;
