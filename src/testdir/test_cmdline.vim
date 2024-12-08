@@ -618,6 +618,9 @@ func Test_cmdline_remove_char()
 
     call feedkeys(":abc def\<S-Left>\<C-U>\<C-B>\"\<CR>", 'tx')
     call assert_equal('"def', @:, e)
+
+    " This was going before the start in latin1.
+    call feedkeys(": \<C-W>\<CR>", 'tx')
   endfor
 
   let &encoding = encoding_save
@@ -1707,6 +1710,11 @@ func Test_cmdline_expr()
   call assert_equal("\"e \<C-\>\<C-Y>", @:)
 endfunc
 
+" This was making the insert position negative
+func Test_cmdline_expr_register()
+  exe "sil! norm! ?\<C-\>e0\<C-R>0\<Esc>?\<C-\>e0\<CR>"
+endfunc
+
 " Test for 'imcmdline' and 'imsearch'
 " This test doesn't actually test the input method functionality.
 func Test_cmdline_inputmethod()
@@ -1959,6 +1967,23 @@ func Test_suffixes_opt()
   call delete('Xfile')
   call delete('Xfile.c')
   call delete('Xfile.o')
+endfunc
+
+func Test_recursive_register()
+  let @= = ''
+  silent! ?e/
+  let caught = 'no'
+  try
+    normal // 
+  catch /E169:/
+    let caught = 'yes'
+  endtry
+  call assert_equal('yes', caught)
+endfunc
+
+func Test_long_error_message()
+  " the error should be truncated, not overrun IObuff
+  silent! norm Q00000000000000     000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000                                                                                                                                                                                                                        
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab

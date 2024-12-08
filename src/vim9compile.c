@@ -5785,11 +5785,13 @@ fill_exarg_from_cctx(exarg_T *eap, cctx_T *cctx)
  * Compile a nested :def command.
  */
     static char_u *
-compile_nested_function(exarg_T *eap, cctx_T *cctx)
+compile_nested_function(exarg_T *eap, cctx_T *cctx, char_u **line_to_free)
 {
     int		is_global = *eap->arg == 'g' && eap->arg[1] == ':';
     char_u	*name_start = eap->arg;
     char_u	*name_end = to_name_end(eap->arg, TRUE);
+    int		off;
+    char_u	*func_name;
     char_u	*lambda_name;
     ufunc_T	*ufunc;
     int		r = FAIL;
@@ -5838,7 +5840,17 @@ compile_nested_function(exarg_T *eap, cctx_T *cctx)
     lambda_name = vim_strsave(get_lambda_name());
     if (lambda_name == NULL)
 	return NULL;
-    ufunc = define_function(eap, lambda_name);
+
+    // This may free the current line, make a copy of the name.
+    off = is_global ? 2 : 0;
+    func_name = vim_strnsave(name_start + off, name_end - name_start - off);
+    if (func_name == NULL)
+    {
+	r = FAIL;
+	goto theend;
+    }
+
+    ufunc = define_function(eap, lambda_name, line_to_free);
 
     if (ufunc == NULL)
     {
@@ -5883,21 +5895,14 @@ compile_nested_function(exarg_T *eap, cctx_T *cctx)
 
     if (is_global)
     {
-	char_u *func_name = vim_strnsave(name_start + 2,
-						    name_end - name_start - 2);
-
-	if (func_name == NULL)
-	    r = FAIL;
-	else
-	{
-	    r = generate_NEWFUNC(cctx, lambda_name, func_name);
-	    lambda_name = NULL;
-	}
+	r = generate_NEWFUNC(cctx, lambda_name, func_name);
+	func_name = NULL;
+	lambda_name = NULL;
     }
     else
     {
 	// Define a local variable for the function reference.
-	lvar_T	*lvar = reserve_local(cctx, name_start, name_end - name_start,
+	lvar_T	*lvar = reserve_local(cctx, func_name, name_end - name_start,
 						    TRUE, ufunc->uf_func_type);
 
 	if (lvar == NULL)
@@ -5909,6 +5914,7 @@ compile_nested_function(exarg_T *eap, cctx_T *cctx)
 
 theend:
     vim_free(lambda_name);
+    vim_free(func_name);
     return r == FAIL ? NULL : (char_u *)"";
 }
 
@@ -5980,11 +5986,14 @@ generate_loadvar(
 	    generate_LOADV(cctx, name + 2, TRUE);
 	    break;
 	case dest_local:
-	    if (lvar->lv_from_outer > 0)
-		generate_LOADOUTER(cctx, lvar->lv_idx, lvar->lv_from_outer,
+	    if (cctx->ctx_skip != SKIP_YES)
+	    {
+		if (lvar->lv_from_outer > 0)
+		    generate_LOADOUTER(cctx, lvar->lv_idx, lvar->lv_from_outer,
 									 type);
-	    else
-		generate_LOAD(cctx, ISN_LOAD, lvar->lv_idx, NULL, type);
+		else
+		    generate_LOAD(cctx, ISN_LOAD, lvar->lv_idx, NULL, type);
+	    }
 	    break;
 	case dest_expr:
 	    // list or dict value should already be on the stack.
@@ -6813,6 +6822,9 @@ compile_assign_unlet(
 		return FAIL;
 	}
     }
+
+    if (cctx->ctx_skip == SKIP_YES)
+	return OK;
 
     // Load the dict or list.  On the stack we then have:
     // - value (for assignment, not for :unlet)
@@ -9862,7 +9874,8 @@ compile_def_function(
 	if (!(local_cmdmod.cmod_flags & CMOD_LEGACY)
 		&& (*cmd != '$' || starts_with_colon)
 		&& (starts_with_colon || !(*cmd == '\''
-		       || (cmd[0] == cmd[1] && (*cmd == '+' || *cmd == '-')))))
+		       || (cmd[0] != NUL && cmd[0] == cmd[1]
+					    && (*cmd == '+' || *cmd == '-')))))
 	{
 	    ea.cmd = skip_range(ea.cmd, TRUE, NULL);
 	    if (ea.cmd > cmd)
@@ -9975,7 +9988,7 @@ compile_def_function(
 	{
 	    case CMD_def:
 		    ea.arg = p;
-		    line = compile_nested_function(&ea, &cctx);
+		    line = compile_nested_function(&ea, &cctx, &line_to_free);
 		    break;
 
 	    case CMD_function:

@@ -3866,9 +3866,18 @@ get_visual_text(
 	    *pp = ml_get_pos(&VIsual);
 	    *lenp = curwin->w_cursor.col - VIsual.col + 1;
 	}
-	if (has_mbyte)
-	    // Correct the length to include the whole last character.
-	    *lenp += (*mb_ptr2len)(*pp + (*lenp - 1)) - 1;
+	if (**pp == NUL)
+	    *lenp = 0;
+	if (*lenp > 0)
+	{
+	    if (has_mbyte)
+		// Correct the length to include all bytes of the last
+		// character.
+		*lenp += (*mb_ptr2len)(*pp + (*lenp - 1)) - 1;
+	    else if ((*pp)[*lenp - 1] == NUL)
+		// Do not include a trailing NUL.
+		*lenp -= 1;
+	}
     }
     reset_VIsual_and_resel();
     return OK;
@@ -4515,6 +4524,11 @@ nv_brackets(cmdarg_T *cap)
 	    clearop(cap->oap);
 	else
 	{
+	    // Make a copy, if the line was changed it will be freed.
+	    ptr = vim_strnsave(ptr, len);
+	    if (ptr == NULL)
+		return;
+
 	    find_pattern_in_path(ptr, 0, len, TRUE,
 		cap->count0 == 0 ? !isupper(cap->nchar) : FALSE,
 		((cap->nchar & 0xf) == ('d' & 0xf)) ?  FIND_DEFINE : FIND_ANY,
@@ -4523,6 +4537,7 @@ nv_brackets(cmdarg_T *cap)
 			    islower(cap->nchar) ? ACTION_SHOW : ACTION_GOTO,
 		cap->cmdchar == ']' ? curwin->w_cursor.lnum + 1 : (linenr_T)1,
 		(linenr_T)MAXLNUM);
+	    vim_free(ptr);
 	    curwin->w_set_curswant = TRUE;
 	}
     }

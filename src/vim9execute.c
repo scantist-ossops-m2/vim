@@ -3206,11 +3206,14 @@ exec_instructions(ectx_T *ectx)
 		    list_functions(NULL);
 		else
 		{
-		    exarg_T ea;
+		    exarg_T	ea;
+		    garray_T	lines_to_free;
 
 		    CLEAR_FIELD(ea);
 		    ea.cmd = ea.arg = iptr->isn_arg.string;
-		    define_function(&ea, NULL);
+		    ga_init2(&lines_to_free, sizeof(char_u *), 50);
+		    define_function(&ea, NULL, &lines_to_free);
+		    ga_clear_strings(&lines_to_free);
 		}
 		break;
 
