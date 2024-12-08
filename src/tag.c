@@ -281,6 +281,7 @@ do_tag(
     char_u	*buf_ffname = curbuf->b_ffname;	    // name to use for
 						    // priority computation
     int		use_tfu = 1;
+    char_u	*tofree = NULL;
 
     // remember the matches for the last used tag
     static int		num_matches = 0;
@@ -630,7 +631,12 @@ do_tag(
 	 * When desired match not found yet, try to find it (and others).
 	 */
 	if (use_tagstack)
-	    name = tagstack[tagstackidx].tagname;
+	{
+	    // make a copy, the tagstack may change in 'tagfunc'
+	    name = vim_strsave(tagstack[tagstackidx].tagname);
+	    vim_free(tofree);
+	    tofree = name;
+	}
 #if defined(FEAT_QUICKFIX)
 	else if (g_do_tagpreview != 0)
 	    name = ptag_entry.tagname;
@@ -683,6 +689,16 @@ do_tag(
 		    && new_num_matches < max_num_matches)
 		max_num_matches = MAXCOL; // If less than max_num_matches
 					  // found: all matches found.
+
+	    // A tag function may do anything, which may cause various
+	    // information to become invalid.  At least check for the tagstack
+	    // to still be the same.
+	    if (tagstack != curwin->w_tagstack)
+	    {
+		emsg(_(e_window_unexpectedly_close_while_searching_for_tags));
+		FreeWild(new_num_matches, new_matches);
+		break;
+	    }
 
 	    // If there already were some matches for the same name, move them
 	    // to the start.  Avoids that the order changes when using
@@ -922,6 +938,7 @@ end_do_tag:
     g_do_tagpreview = 0;	// don't do tag preview next time
 # endif
 
+    vim_free(tofree);
 #ifdef FEAT_CSCOPE
     return jumped_to_tag;
 #else
