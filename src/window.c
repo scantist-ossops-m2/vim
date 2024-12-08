@@ -1661,6 +1661,11 @@ win_exchange(long Prenum)
 
     (void)win_comp_pos();		// recompute window positions
 
+    if (wp->w_buffer != curbuf)
+	reset_VIsual_and_resel();
+    else if (VIsual_active)
+	wp->w_cursor = curwin->w_cursor;
+
     win_enter(wp, TRUE);
     redraw_all_later(NOT_VALID);
 }
@@ -2499,6 +2504,8 @@ win_close(win_T *win, int free_buf)
 	 */
 	if (wp->w_buffer != curbuf)
 	{
+	    reset_VIsual_and_resel();	// stop Visual mode
+
 	    other_buffer = TRUE;
 	    win->w_closing = TRUE;
 	    apply_autocmds(EVENT_BUFLEAVE, NULL, NULL, FALSE, curbuf);
@@ -5158,7 +5165,7 @@ frame_remove(frame_T *frp)
 win_alloc_lines(win_T *wp)
 {
     wp->w_lines_valid = 0;
-    wp->w_lines = ALLOC_CLEAR_MULT(wline_T, Rows );
+    wp->w_lines = ALLOC_CLEAR_MULT(wline_T, Rows);
     if (wp->w_lines == NULL)
 	return FAIL;
     return OK;

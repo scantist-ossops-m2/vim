@@ -266,6 +266,12 @@ func Test_tagjump_etags()
   call delete('Xtags')
   call delete('Xmain.c')
   bwipe!
+
+  new somefile
+  call setline(1, ['first line', '', '#define something 0'])
+  sil norm 0o0
+  sil! norm ]d
+  bwipe!
 endfunc
 
 " Test for getting and modifying the tag stack
@@ -1136,6 +1142,17 @@ func Test_inc_search()
   call assert_fails('isplit bar', 'E389:')
 
   close!
+endfunc
+
+" this was using a line from ml_get() freed by the regexp
+func Test_isearch_copy_line()
+  new
+  norm o
+  norm 0
+  0norm o
+  sil! norm bc0
+  sil! isearch \%')
+  bwipe!
 endfunc
 
 " Test for :dsearch, :dlist, :djump and :dsplit commands
