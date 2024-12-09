@@ -1430,6 +1430,13 @@ do_buffer(
 #ifdef FEAT_GUI
     need_mouse_correct = TRUE;
 #endif
+    if ((action == DOBUF_GOTO || action == DOBUF_SPLIT)
+						  && (buf->b_flags & BF_DUMMY))
+    {
+	// disallow navigating to the dummy buffer
+	semsg(_(e_buffer_nr_does_not_exist), count);
+	return FAIL;
+    }
 
     /*
      * delete buffer buf from memory and/or the list
