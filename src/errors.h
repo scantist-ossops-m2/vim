@@ -287,3 +287,5 @@ EXTERN char e_cannot_add_to_null_list[]
 EXTERN char e_cannot_add_to_null_blob[]
 	INIT(= N_("E1131: Cannot add to null blob"));
 #endif
+EXTERN char e_window_unexpectedly_close_while_searching_for_tags[]
+	INIT(= N_("E1299: Window unexpectedly closed while searching for tags"));
