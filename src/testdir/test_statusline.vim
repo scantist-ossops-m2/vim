@@ -465,4 +465,14 @@ func Test_statusline_after_split_vsplit()
 endfunc
 
 
+" Used to write beyond allocated memory.  This assumes MAXPATHL is 4096 bytes.
+func Test_statusline_verylong_filename()
+  let fname = repeat('x', 4090)
+  exe "new " .. fname
+  set buftype=help
+  set previewwindow
+  redraw
+  bwipe!
+endfunc
+
 " vim: shiftwidth=2 sts=2 expandtab
