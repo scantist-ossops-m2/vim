@@ -591,6 +591,9 @@ func Test_cmdline_remove_char()
 
     call feedkeys(":abc def\<S-Left>\<C-U>\<C-B>\"\<CR>", 'tx')
     call assert_equal('"def', @:, e)
+
+    " This was going before the start in latin1.
+    call feedkeys(": \<C-W>\<CR>", 'tx')
   endfor
 
   let &encoding = encoding_save
@@ -1745,6 +1748,23 @@ func Test_wildmenu_dirstack()
   cd -
   call delete('Xdir1', 'rf')
   set wildmenu&
+endfunc
+
+func Test_recursive_register()
+  let @= = ''
+  silent! ?e/
+  let caught = 'no'
+  try
+    normal // 
+  catch /E169:/
+    let caught = 'yes'
+  endtry
+  call assert_equal('yes', caught)
+endfunc
+
+func Test_long_error_message()
+  " the error should be truncated, not overrun IObuff
+  silent! norm Q00000000000000     000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000                                                                                                                                                                                                                        
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
